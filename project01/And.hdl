@@ -8,9 +8,10 @@
  */
 
 CHIP And {
-    IN a, b;
-    OUT out;
+   IN a, b;
+   OUT out;
 
-    PARTS:
-    // Put your code here.
+   PARTS:
+      Nand(a=a, b=b, out=nandout);
+      Not(in=nandout, out=out);
 }
