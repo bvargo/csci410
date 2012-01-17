@@ -1,0 +1,33 @@
+/**
+ * 4-way 1-bit multiplexor.
+ * out = a if sel==00
+ *       b if sel==01
+ *       c if sel==10
+ *       d if sel==11
+ */
+
+CHIP Mux4Way {
+   IN a, b, c, d, sel[2];
+   OUT out;
+
+   PARTS:
+      Not(in=sel[0], out=notsel0);
+      Not(in=sel[1], out=notsel1);
+
+      // 2 bit decoder
+      And(a=notsel1, b=notsel0, out=use0);
+      And(a=notsel1, b=sel[0],  out=use1);
+      And(a=sel[1],  b=notsel0, out=use2);
+      And(a=sel[1],  b=sel[0],  out=use3);
+
+      // apply selectors
+      Mux(a=false, b=a, sel=use0, out=out1);
+      Mux(a=false, b=b, sel=use1, out=out2);
+      Mux(a=false, b=c, sel=use2, out=out3);
+      Mux(a=false, b=d, sel=use3, out=out4);
+
+      // or the results of the selectors
+      Or(a=out1, b=out2, out=out5);
+      Or(a=out3, b=out4, out=out6);
+      Or(a=out5, b=out6, out=out);
+}

@@ -13,12 +13,13 @@
 
 
 CHIP DMux4Way {
+   IN in, sel[2];
+   OUT a, b, c, d;
 
-
-    IN in, sel[2];
-
-    OUT a, b, c, d;
-
-    PARTS:
-    // Put your code here.
+   PARTS:
+      // mux for a output
+      Mux4Way(a=in, b=false, c=false, d=false, sel=sel, out=a);
+      Mux4Way(a=false, b=in, c=false, d=false, sel=sel, out=b);
+      Mux4Way(a=false, b=false, c=in, d=false, sel=sel, out=c);
+      Mux4Way(a=false, b=false, c=false, d=in, sel=sel, out=d);
 }
