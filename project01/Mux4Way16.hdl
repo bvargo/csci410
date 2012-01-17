@@ -11,14 +11,28 @@
  *       d if sel==11
  */
 
-
 CHIP Mux4Way16 {
+   IN a[16], b[16], c[16], d[16], sel[2];
+   OUT out[16];
 
+   PARTS:
+      Not(in=sel[0], out=notsel0);
+      Not(in=sel[1], out=notsel1);
 
-    IN a[16], b[16], c[16], d[16], sel[2];
+      // 2 bit decoder
+      And(a=notsel1, b=notsel0, out=use0);
+      And(a=notsel1, b=sel[0],  out=use1);
+      And(a=sel[1],  b=notsel0, out=use2);
+      And(a=sel[1],  b=sel[0],  out=use3);
 
-    OUT out[16];
+      // apply selectors
+      Mux16(a=false, b=a, sel=use0, out=out1);
+      Mux16(a=false, b=b, sel=use1, out=out2);
+      Mux16(a=false, b=c, sel=use2, out=out3);
+      Mux16(a=false, b=d, sel=use3, out=out4);
 
-    PARTS:
-    // Put your code here.
+      // or the results of the selectors
+      Or16(a=out1, b=out2, out=out5);
+      Or16(a=out3, b=out4, out=out6);
+      Or16(a=out5, b=out6, out=out);
 }
