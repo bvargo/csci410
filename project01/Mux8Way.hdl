@@ -1,0 +1,19 @@
+/**
+ * 8-way 16-bit multiplexor.
+ * out = a if sel==000
+ *       b if sel==001
+ *       etc.
+ *       h if sel==111
+ */
+
+CHIP Mux8Way {
+   IN a, b, c, d, e, f, g, h, sel[3];
+   OUT out;
+
+   PARTS:
+      // compose two 4-way muxes into an 8 way mux using a mux!
+      // that is, select which 4-way mux to be used based on the MSB
+      Mux4Way(a=a, b=b, c=c, d=d, sel=sel[0..1], out=out1);
+      Mux4Way(a=e, b=f, c=g, d=h, sel=sel[0..1], out=out2);
+      Mux(a=out1, b=out2, sel=sel[2], out=out);
+}
