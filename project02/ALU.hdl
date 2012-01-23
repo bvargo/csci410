@@ -30,20 +30,73 @@
 
 
 CHIP ALU {
-    IN
-        x[16], y[16],  // 16-bit inputs
-        zx, // zero the x input?
-        nx, // negate the x input?
-        zy, // zero the y input?
-        ny, // negate the y input?
-        f,  // compute  out = x + y (if 1) or out = x & y (if 0)
-        no; // negate the out output?
+   IN
+      x[16], y[16],  // 16-bit inputs
+      zx, // zero the x input?
+      nx, // negate the x input?
+      zy, // zero the y input?
+      ny, // negate the y input?
+      f,  // compute  out = x + y (if 1) or out = x & y (if 0)
+      no; // negate the out output?
 
-    OUT
-        out[16], // 16-bit output
-        zr, // 1 if (out==0), 0 otherwise
-        ng; // 1 if (out<0),  0 otherwise
+   OUT
+      out[16], // 16-bit output
+      zr, // 1 if (out==0), 0 otherwise
+      ng; // 1 if (out<0),  0 otherwise
 
-    PARTS:
-    // Put your code here.
+   PARTS:
+      //
+      // zx and nx logic
+      //
+
+      // if (zx==1) set x = 0        // 16-bit constant
+      Mux16(a=x, b=false, sel=zx, out=x0);
+
+      // if (nx==1) set x = ~x       // bitwise "not"
+      Not16(in=x0, out=x0Negated);
+      Mux16(a=x0, b=x0Negated, sel=nx, out=x1);
+
+      // if (zy==1) set y = 0        // 16-bit constant
+      Mux16(a=y, b=false, sel=zy, out=y0);
+
+      // if (ny==1) set y = ~y       // bitwise "not"
+      Not16(in=y0, out=y0Negated);
+      Mux16(a=y0, b=y0Negated, sel=ny, out=y1);
+
+      //
+      // function selector for x + y or x & y
+      //
+
+      // if (f==1)  set out = x + y  // integer 2's complement addition
+      Add16(a=x1, b=y1, out=add);
+
+      // if (f==0)  set out = x & y  // bitwise "and"
+      And16(a=x1, b=y1, out=and);
+
+      // select between the two functions
+      Mux16(a=and, b=add, sel=f, out=out0);
+
+      //
+      // negation (no) bit
+      //
+
+      // if (no==1) set out = ~out   // bitwise "not"
+      Not16(in=out0, out=out0Negated);
+      Mux16(a=out0, b=out0Negated, sel=no, out=outFinal);
+
+      // outFinal is needed because it is used below, and the simulator will
+      // not allow the output pins to serve as input for other internal chips
+      And16(a=outFinal, b=true, out=out);
+
+      //
+      // output bits for zero and negative
+      //
+
+      // if (out==0) set zr = 1
+      Or16Way(in=outFinal, out=isNotZero);
+      Not(in=isNotZero, out=zr);
+
+      // if (out<0) set ng = 1
+      MSB16(in=outFinal, out=outFinal15);
+      And(a=outFinal15, b=true, out=ng);
 }

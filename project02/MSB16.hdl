@@ -1,0 +1,13 @@
+/**
+ * Returns the MSB of 16 bits. Required because the simulator does not allow
+ * sub-bussing of internal nodes.
+ */
+
+CHIP MSB16 {
+   IN in[16];
+   OUT out;
+
+   PARTS:
+      And(a=in[15], b=true, out=out);
+}
+
