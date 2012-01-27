@@ -81,8 +81,10 @@ CHIP ALU {
       //
 
       // if (no==1) set out = ~out   // bitwise "not"
+      // the second line also includes a second wire from the MSB to the
+      // negative flag
       Not16(in=out0, out=out0Negated);
-      Mux16(a=out0, b=out0Negated, sel=no, out=outFinal);
+      Mux16(a=out0, b=out0Negated, sel=no, out=outFinal, out[15]=ng);
 
       // outFinal is needed because it is used below, and the simulator will
       // not allow the output pins to serve as input for other internal chips
@@ -95,7 +97,4 @@ CHIP ALU {
       // if (out==0) set zr = 1
       Or16Way(in=outFinal, out=isNotZero);
       Not(in=isNotZero, out=zr);
-
-      // if (out<0) set ng = 1
-      MSB16(in=outFinal, out=ng);
 }
