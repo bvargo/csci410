@@ -97,6 +97,5 @@ CHIP ALU {
       Not(in=isNotZero, out=zr);
 
       // if (out<0) set ng = 1
-      MSB16(in=outFinal, out=outFinal15);
-      And(a=outFinal15, b=true, out=ng);
+      MSB16(in=outFinal, out=ng);
 }
