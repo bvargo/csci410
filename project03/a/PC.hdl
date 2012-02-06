@@ -12,10 +12,22 @@
  */
 
 CHIP PC {
-    IN in[16],load,inc,reset;
-    OUT out[16];
+   IN in[16], load, inc, reset;
+   OUT out[16];
 
-    PARTS:
-    // Put your code here.
+   PARTS:
+      // previousOutput is the previous output (feedback)
+
+      // choose between increment and the previous output
+      Inc16(in=previousOutput, out=incrementOutput);
+      Mux16(a=previousOutput, b=incrementOutput, sel=inc, out=out1);
+
+      // choose between load and the above output
+      Mux16(a=out1, b=in, sel=load, out=out2);
+
+      // choose between reset and the above output
+      Mux16(a=out2, b=false, sel=reset, out=out3);
+
+      // save the value into previousValue
+      Register(in=out3, load=true, out=previousOutput, out=out);
 }
-
