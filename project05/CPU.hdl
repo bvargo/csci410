@@ -27,17 +27,69 @@
 
 CHIP CPU {
 
-    IN  inM[16],         // M value input  (M = contents of RAM[A])
-        instruction[16], // Instruction for execution
-        reset;           // Signals whether to re-start the current
+   IN inM[16],          // M value input  (M = contents of RAM[A])
+      instruction[16],  // Instruction for execution
+      reset;            // Signals whether to re-start the current
                          // program (reset=1) or continue executing
                          // the current program (reset=0).
 
-    OUT outM[16],        // M value output
-        writeM,          // Write into M?
-        addressM[15],    // Address in data memory (of M)
-        pc[15];          // address of next instruction
+   OUT outM[16],        // M value output
+       writeM,          // Write into M?
+       addressM[15],    // Address in data memory (of M)
+       pc[15];          // address of next instruction
 
-     PARTS:
-    // Put your code here.
+   PARTS:
+      // mux to load the instruction or ALU output into A
+      // if the MSB of the instruction is 0, then a constant is loaded into A
+      // from the instruction; if the MSB of the instruction is 1, then it is
+      // a C instruction, so the output (if it is saved) comes from the ALU
+      Mux16(a=instruction, b=aluOut, sel=instruction[15], out=instructionOrALU);
+
+      // a register
+      // need to store into a A if there is an A instruciton or the
+      // destination of a C instruction includes the A register
+      Not(in=instruction[15], out=aInstruction);
+      Or(a=aInstruction, b=instruction[5], out=loadA);
+      ARegister(in=instructionOrALU, load=loadA, out=A, out[0..14]=addressM);
+
+      // mux to choose between A and M for the A/M input to the ALU
+      Mux16(a=A, b=inM, sel=instruction[12], out=AM);
+
+      // d register
+      // if the destination is D ([4]) and it is a C instruction ([15]), write
+      // to D
+      And(a=instruction[15], b=instruction[4], out=loadD);
+      DRegister(in=aluOut, load=loadD, out=D);
+
+      // if the destination is M ([3]) and it is a C instruction ([15]), write
+      // to memory
+      And(a=instruction[3], b=instruction[15], out=writeM);
+
+      // ALU
+      // contorl bits align with C instruction
+      ALU(x=D, y=AM,
+         zx=instruction[11],
+         nx=instruction[10],
+         zy=instruction[9],
+         ny=instruction[8],
+         f=instruction[7],
+         no=instruction[6],
+         out=aluOut, out=outM, zr=zero, ng=negative);
+
+      // program counter
+      PC(in=A, load=loadPC, inc=true, reset=reset, out[0..14]=pc);
+
+      // jump logic
+      // test for jump conditions for greater than, equal to, and negative
+      And(a=instruction[0], b=positive, out=positiveJump);
+      And(a=instruction[1], b=zero, out=zeroJump);
+      And(a=instruction[2], b=negative, out=negativeJump);
+      // supporting logic for positive jump
+      Or(a=negative, b=zero, out=notPositive);
+      Not(in=notPositive, out=positive);
+      // figure out if there is a jump
+      Or(a=positiveJump, b=zeroJump, out=jumpNonNegative);
+      Or(a=jumpNonNegative, b=negativeJump, out=jump);
+      // make sure this is a C instruction before telling the PC to load
+      And(a=jump, b=instruction[15], out=loadPC);
 }
