@@ -1,6 +1,6 @@
 load CPU.hdl,
 output-file CPUnomemory.out,
-compare-to CPUnomemory.cmp
+compare-to CPUnomemory.cmp,
 output-list time%S0.4.0 instruction%B0.16.0 pc%D0.5.0 DRegister[]%D1.6.1;
 
 set instruction %B1110111111010000, tick, tock, output;
