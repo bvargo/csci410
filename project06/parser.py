@@ -3,28 +3,6 @@
 # parses the comands, and provides access to the fields of each command
 # also, all white space and comments are removed
 
-# notes about symbols, constants, and comments:
-# the rest of the language is defined in the book
-#
-# constants are non-negative and are written in decimal notation a symbol can
-# be a sequence of letters, digits, _, ., $, : and may not begin with a digit
-# labels are assigned to the instruction memory of the next instruction
-# variables are assigned to the data memory consecutively starting at address
-# 16
-#
-# predefined symbols:
-# SP         0
-# LCL        1
-# ARG        2
-# THIS       3
-# THAT       4
-# R0-R15     0-15
-# SCREEN     16384
-# KBD        24576
-#
-# comments begin with two slasses and go to the end of the line
-# 
-
 class Parser(object):
    # list of source lines
    source = []

@@ -39,6 +39,62 @@ class Assembler(object):
 
    # assemble the source
    def assemble(self):
+      #
+      # first pass - build the symbol table for labels
+      #
+
+      parser = Parser(self.source_filename)
+      symbol_table = SymbolTable()
+
+      # the current instruction
+      instruction = 0
+
+      # parse each command
+      while parser.hasMoreCommands():
+         # advance to the next command
+         parser.advance()
+
+         # parse the command type and look for symbols
+         command_type = parser.commandType()
+         if command_type == "L":
+            # look for an instruction label symbol
+            symbol = parser.symbol()
+            if symbol not in symbol_table:
+               symbol_table.addEntry(symbol, instruction)
+         else:
+            # increment the instruction count if this was not a label
+            if command_type != "L":
+               instruction += 1
+
+      #
+      # second pass - build the symbol table for variables
+      #
+
+      parser = Parser(self.source_filename)
+
+      # the memory location for the next variable
+      variable_address = 16
+
+      # parse each command
+      while parser.hasMoreCommands():
+         # advance to the next command
+         parser.advance()
+
+         # parse the command type and look for symbols
+         command_type = parser.commandType()
+         if command_type == "A":
+            # look for a variable value symbol
+            symbol = parser.symbol()
+            if symbol[0] not in map(str, range(0, 10)):
+               # the symbol is not a number; that is, it is actually a symbol
+               if symbol not in symbol_table:
+                  symbol_table.addEntry(symbol, variable_address)
+                  variable_address += 1
+
+      #
+      # third pass - generate assembly
+      #
+
       parser = Parser(self.source_filename)
       code = Code()
 
@@ -51,28 +107,25 @@ class Assembler(object):
          if command_type == "A":
             # a command
             symbol = parser.symbol()
-            # TODO: handle symbol
+            if symbol in symbol_table:
+               symbol = symbol_table.getAddress(symbol)
 
             symbol_binary = code.decimalToBinary(symbol)
 
-            self.destination_file.write("0" + symbol_binary)
+            self.destination_file.write("0" + symbol_binary + "\n")
          elif command_type == "C":
             # c command
             comp = code.comp(parser.comp())
             dest = code.dest(parser.dest())
             jump = code.jump(parser.jump())
 
-            self.destination_file.write("111" + comp + dest + jump)
+            self.destination_file.write("111" + comp + dest + jump + "\n")
          elif command_type == "L":
-            # label
-            symbol = parser.symbol()
-
-            # TODO: handle symbols
+            # label - do nothing in this stage
+            pass
          else:
             # unknown command
             raise Exception("ERROR: Unknown command type encountered")
-
-         self.destination_file.write("\n")
 
       # close the output file
       self.destination_file.close()
