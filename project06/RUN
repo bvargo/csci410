@@ -1,0 +1,8 @@
+#!/bin/sh
+./main.py add/Add.asm
+./main.py max/Max.asm
+./main.py max/MaxL.asm
+./main.py rect/Rect.asm
+./main.py rect/RectL.asm
+./main.py pong/Pong.asm
+./main.py pong/PongL.asm

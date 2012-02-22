@@ -1,0 +1,8 @@
+main.py is the driver program. It is invoked as follows:
+./main.py program.asm
+The file program.hack will be automatically created.
+
+If program.asm is in a directory, then the directory will be used fo the
+output file as well; for example
+./main.py program/program.asm
+produces the file program/program.hack.
