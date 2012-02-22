@@ -16,3 +16,9 @@ class Code(object):
    # digits)
    def jump(self, mnemonic):
       pass
+
+   # converts the decimal representation to an ascii-encoded 15-digit binary
+   # number
+   # decimal can be either a string or an integer
+   def decimalToBinary(decimal):
+      pass

@@ -3,9 +3,6 @@
 import sys
 
 from assembler import Assembler
-from code import Code
-from parser import Parser
-from symbol_table import SymbolTable
 
 def main(args):
    if len(args) != 2:
@@ -23,8 +20,8 @@ def main(args):
    try:
       assembler = Assembler(source_filename)
       assembler.assemble()
-   except Exception as e:
-      print e
+   except IOError:
+      print "ERROR: Could not open source file or error writing to destination"
 
 if __name__ == "__main__":
    main(sys.argv)
