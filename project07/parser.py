@@ -44,25 +44,65 @@ class Parser(object):
          self.current_command = self.source.pop(0)
 
    # returns the type of the current command
-   # returns one of "A", for a commands, "C", for c commands, and "L", for
-   # labels
-   def commandType(self):
+   # commands are:
+   # - C_ARITHMETIC, 
+   # - C_PUSH,
+   # - C_POP, 
+   # - C_LABEL,
+   # - C_GOTO, 
+   # - C_IF, 
+   # - C_FUNCTION, 
+   # - C_RETURN, 
+   # - C_CALL 
+   def command_type(self):
       current_command = self.current_command
-      # TODO
+      parts = current_command.split()
+      if parts[0] in ["add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not"]:
+         return "C_ARITHMETIC"
+      elif parts[0] == "push":
+         return "C_PUSH"
+      elif parts[0] == "pop":
+         return "C_POP"
+      elif parts[0] == "label":
+         return "C_LABEL"
+      elif parts[0] == "goto":
+         return "C_GOTO"
+      elif parts[0] == "if-goto":
+         return "C_IF"
+      elif parts[0] == "function":
+         return "C_FUNCTION"
+      elif parts[0] == "return":
+         return "C_RETURN"
+      elif parts[0] == "call":
+         return "C_CALL"
+      else:
+         raise Error("Illegal command type: " + parts[0])
 
    # returns the first argument of the current command
    # if the comamnd is of type C_ARITHMETIC, then the command itself (add,
    # sub, etc) is returned; should not be called if command type is C_RETURN
    def arg1(self):
-      # TODO
-      if self.commandType() == "C_ARITHMETIC":
-         pass
-      elif self.commandType() != "C_RETURN":
-         pass
+      current_command = self.current_command
+      parts = current_command.split()
+
+      if self.command_type() == "C_ARITHMETIC":
+         return parts[0]
+      elif self.command_type() != "C_RETURN":
+         return parts[1]
+      else:
+         raise Error("Illegal call to arg1(): C_RETURN does not have arguments")
 
    # returns the second argument of the current command
    # should be called only if the command tyep is C_PUSH, C_POP, C_FUNCTION,
    # or C_CALL
-   def arg1(self):
-      if self.commandType() in ["C_PUSH", "C_POP", "C_FUNCTION"]:
-         pass
+   def arg2(self):
+      if self.command_type() in ["C_PUSH", "C_POP", "C_FUNCTION", "C_CALL"]:
+         current_command = self.current_command
+         parts = current_command.split()
+         try:
+            return int(parts[2])
+         except:
+            raise Error("Not an integer: " + parts[2])
+      else:
+         raise Error("Illegal call to arg2(): " + self.command_type() + \
+               " does not support a second argument")
