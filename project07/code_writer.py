@@ -19,7 +19,7 @@ class CodeWriter(object):
       pass
 
    # writes the assembly code for a push or pop operation
-   def write_push_pop(self, segment, index):
+   def write_push_pop(self, command, segment, index):
       pass
 
    # closes the output file

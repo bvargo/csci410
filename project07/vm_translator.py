@@ -61,8 +61,26 @@ class VMTranslator(object):
 
    # translate the source
    def translate(self):
+      code_writer = CodeWriter(self.destination_file)
+
+      # for each source filename
       for source_filename in self.source_filenames:
          parser = Parser(source_filename)
+         code_writer.set_filename(source_filename)
+
+         # parse each command
+         while parser.has_more_commands():
+            # advance to the next command
+            parser.advance()
+
+            # parse the command type
+            command_type = parser.command_type()
+            if command_type == "C_ARITHMETIC":
+               code_writer.write_arithemtic(parser.arg1())
+            elif command_type in ["C_POP", "C_PUSH"]:
+               code_writer.write_push_pop(command_type, parser.arg1(), parser.arg2())
+            else:
+               raise Error("Not implemented: command type " + command_type)
 
       # close the output file
-      self.destination_file.close()
+      code_writer.close()
