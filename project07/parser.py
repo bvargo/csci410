@@ -76,7 +76,7 @@ class Parser(object):
       elif parts[0] == "call":
          return "C_CALL"
       else:
-         raise Error("Illegal command type: " + parts[0])
+         raise Exception("Illegal command type: " + parts[0])
 
    # returns the first argument of the current command
    # if the comamnd is of type C_ARITHMETIC, then the command itself (add,
@@ -90,7 +90,7 @@ class Parser(object):
       elif self.command_type() != "C_RETURN":
          return parts[1]
       else:
-         raise Error("Illegal call to arg1(): C_RETURN does not have arguments")
+         raise Exception("Illegal call to arg1(): C_RETURN does not have arguments")
 
    # returns the second argument of the current command
    # should be called only if the command tyep is C_PUSH, C_POP, C_FUNCTION,
@@ -102,7 +102,7 @@ class Parser(object):
          try:
             return int(parts[2])
          except:
-            raise Error("Not an integer: " + parts[2])
+            raise Exception("Not an integer: " + parts[2])
       else:
-         raise Error("Illegal call to arg2(): " + self.command_type() + \
+         raise Exception("Illegal call to arg2(): " + self.command_type() + \
                " does not support a second argument")
