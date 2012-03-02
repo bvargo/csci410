@@ -21,19 +21,63 @@ class CodeWriter(object):
    def write_arithemtic(self, command):
       if command in ["add", "sub", "and", "or"]:
          # simple command that consumes two operands from the stack
-         
-         # the symbol that represents the command
-         if command == "add":
-            command_symbol = "+"
-         elif command == "sub":
-            command_symbol = "-"
-         elif command == "and":
-            command_symbol = "&"
-         elif command == "or":
-            command_symbol = "|"
+         self.destination_file.write(self.arithmetic_add_sub_and_or(command))
+      elif command in ["neg", "not"]:
+         # command that consumes one operand from the stack
+         self.destination_file.write(self.arithmetic_neg_not(command))
+      elif command in ["gt", "lt", "eq"]:
+         # complex command that consumes two operands from the stack
+         self.destination_file.write(self.arithmetic_gt_lt_eq(command))
+      else:
+         raise Exception("Arithmetic command " + command + " not handled.")
 
-         # write the command
-         self.destination_file.write("""
+   # writes the assembly code for a push or pop operation
+   def write_push_pop(self, command, segment, index):
+      if command == "C_PUSH":
+         if segment == "constant":
+            self.destination_file.write(self.push_constant(index))
+         elif segment in ["argument", "local", "this", "that"]:
+            self.destination_file.write(self.push_double_pointer(segment, index))
+         elif segment in ["pointer", "temp"]:
+            # pointer is RAM[3-4] (this and that), and temp is RAM[5-12]
+            self.destination_file.write(self.push_stationary(segment, index))
+         elif segment == "static":
+            # static variables
+            raise NotImplementedError("Segment type " + segment + " for push")
+         else:
+            raise Exception("Invalid segment type " + segment + " for push")
+      elif command == "C_POP":
+         if segment in ["argument", "local", "this", "that"]:
+            self.destination_file.write(self.pop_double_pointer(segment, index))
+         elif segment in ["pointer", "temp"]:
+            # pointer is RAM[3-4] (this and that), and temp is RAM[5-12]
+            self.destination_file.write(self.pop_stationary(segment, index))
+         elif segment == "static":
+            # static variables
+            raise NotImplementedError("Segment type " + segment + " for pop")
+         else:
+            raise Exception("Invalid segment type " + segment + " for pop")
+
+   # closes the output file
+   def close(self):
+      self.destination_file.close()
+
+################################################################################
+
+   # returns an add, sub, and, or or command
+   def arithmetic_add_sub_and_or(self, command):
+      # the symbol that represents the command
+      if command == "add":
+         command_symbol = "+"
+      elif command == "sub":
+         command_symbol = "-"
+      elif command == "and":
+         command_symbol = "&"
+      elif command == "or":
+         command_symbol = "|"
+
+      # return the command
+      return """
 //
 // BEGIN %s
 //
@@ -49,18 +93,20 @@ A=A-1
 // compute the operation, saving the result to the location of the new end of
 // the stack (2 consumed, 1 produced)
 M=M%sD
-""" % (command, command_symbol))
-      elif command in ["neg", "not"]:
-         # command that consumes one operand from the stack
+""" % (command, command_symbol)
 
-         # the symbol that represents the command
-         if command == "neg":
-            command_symbol = "-"
-         elif command == "not":
-            command_symbol = "!"
+################################################################################
 
-         # write the command
-         self.destination_file.write("""
+   # returns a neg or not command
+   def arithmetic_neg_not(self, command):
+      # the symbol that represents the command
+      if command == "neg":
+         command_symbol = "-"
+      elif command == "not":
+         command_symbol = "!"
+
+      # write the command
+      return """
 //
 // BEGIN %s
 //
@@ -71,25 +117,27 @@ M=M%sD
 A=M-1
 // modify the value at the end of the stack with the operation
 M=%sM
-""" % (command, command_symbol))
-      elif command in ["gt", "lt", "eq"]:
-         # complex command that consumes two operands from the stack
+""" % (command, command_symbol)
 
-         # the jump type for the command
-         if command == "gt":
-            jump = "JGT"
-         elif command == "lt":
-            jump = "JLT"
-         elif command == "eq":
-            jump = "JEQ"
+################################################################################
 
-         # increase the jump number
-         # each comparison requires a different label for jumps
-         self.jump_number += 1
-         jump_number = self.jump_number
+   # returns a gt, lt, or eq command
+   def arithmetic_gt_lt_eq(self, command):
+      # the jump type for the command
+      if command == "gt":
+         jump = "JGT"
+      elif command == "lt":
+         jump = "JLT"
+      elif command == "eq":
+         jump = "JEQ"
 
-         # write the comamnd
-         self.destination_file.write("""
+      # increase the jump number
+      # each comparison requires a different label for jumps
+      self.jump_number += 1
+      jump_number = self.jump_number
+
+      # write the comamnd
+      return """
 //
 // BEGIN %s
 //
@@ -108,27 +156,24 @@ D=M-D
 @COMPARISON_%d
 D;%s
 // fall through the jump - jump did not happen, false
-   @SP
-   A=M-1
-   M=0
-   // jump to the end condition
-   @COMPARISON_END_%d
-   0;JMP
+@SP
+A=M-1
+M=0
+// jump to the end condition
+@COMPARISON_END_%d
+0;JMP
 (COMPARISON_%d)
 // jump did happen, true
-   @SP
-   A=M-1
-   M=-1
+@SP
+A=M-1
+M=-1
 (COMPARISON_END_%d)
-""" % (command, jump_number, jump, jump_number, jump_number, jump_number))
-      else:
-         raise Error("Arithmetic command " + command + " not handled.")
+""" % (command, jump_number, jump, jump_number, jump_number, jump_number)
 
-   # writes the assembly code for a push or pop operation
-   def write_push_pop(self, command, segment, index):
-      if command == "C_PUSH":
-         if segment == "constant":
-            self.destination_file.write("""
+################################################################################
+
+   def push_constant(self, index):
+      return """
 //
 // BEGIN PUSH of value %d
 //
@@ -144,29 +189,147 @@ M=D
 // store the new stack pointer into SP
 @SP
 M=M+1
-""" % (index, index))
-         else:
-            raise Error("Not implemented: segment type " + segment + " for push")
-      elif command == "C_POP":
-         """
-         // EXAMPLE POP ROUTINE - replace DESTINATION as appropriate
+""" % (index, index)
 
-         // load the current stack pointer address, decrementing the value by
-         // 1
-         @SP
-         A=M-1
-         // load the value at the end of the stack
-         D=M
-         // move A to the place where the new value will be written
-         A=DESTINATION
-         // write the value from the stack to the new location
-         M=D
-         // decrement the stack pointer
-         @SP
-         M=M-1
-         """
-         raise Error("Not implemented: segment type " + segment + " for pop")
+################################################################################
 
-   # closes the output file
-   def close(self):
-      self.destination_file.close()
+   # push from argument, local, this, or that
+   def push_double_pointer(self, segment, index):
+      # read from a double pointer
+
+      # the name of the register to use as the base pointer
+      if segment == "argument":
+         segment_reg = "ARG"
+      elif segment == "local":
+         segment_reg = "LCL"
+      elif segment == "this":
+         segment_reg = "THIS"
+      elif segment == "that":
+         segment_reg = "THAT"
+
+      return """
+//
+// BEGIN PUSH of %s %d
+//
+
+// load the address of the segment into D
+@%s
+D=M
+// add the offset to get segment[index]
+@%d
+A=D+A
+// put the value to push onto the stack from memory into D
+D=M
+// load the current stack pointer address
+@SP
+A=M
+// write the data value into the memory location
+M=D
+// store the new stack pointer into SP
+@SP
+M=M+1
+""" % (segment, index, segment_reg, index)
+
+################################################################################
+
+   # pushes a value onto the stack from a stationary address (pointer or
+   # temp)
+   def push_stationary(self, segment, index):
+      # the name of the stationary register to use
+      if segment == "pointer" and index == 0:
+         register = "THIS"
+      elif segment == "pointer" and index == 1:
+         register = "THAT"
+      elif segment == "temp":
+         register = "R" + str(index + 5)
+
+      return """
+//
+// BEGIN PUSH of %s %d
+//
+
+// put the value to push into D
+@%s
+D=M
+// load the current stack pointer address
+@SP
+A=M
+// write the data value into the memory location
+M=D
+// store the new stack pointer into SP
+@SP
+M=M+1
+""" % (segment, index, register)
+
+
+################################################################################
+
+   # pop from argument, local, this, or that
+   def pop_double_pointer(self, segment, index):
+      # write to a double pointer
+
+      # the name of the register to use as the base pointer
+      if segment == "argument":
+         segment_reg = "ARG"
+      elif segment == "local":
+         segment_reg = "LCL"
+      elif segment == "this":
+         segment_reg = "THIS"
+      elif segment == "that":
+         segment_reg = "THAT"
+
+      return """
+// BEGIN POP of %s %d
+
+// calculate the destination
+// load the address of segment into D
+@%s
+D=M
+// add the offset to get segment[index]
+@%d
+D=D+A
+// store the destination location in a temporary register (R13)
+@R13
+M=D
+
+// load the value from the stack
+// load the current stack pointer address, decrementing the value by
+// 1, storing the new stack pointer
+@SP
+AM=M-1
+// load the value at the end of the stack into D
+D=M
+// load the precomputed destination into A
+@R13
+A=M
+// store D into the destination address
+M=D
+""" % (segment, index, segment_reg, index)
+
+################################################################################
+
+   def pop_stationary(self, segment, index):
+      # the name of the register to use as the base pointer
+      # the name of the stationary register to use
+      if segment == "pointer" and index == 0:
+         register = "THIS"
+      elif segment == "pointer" and index == 1:
+         register = "THAT"
+      elif segment == "temp":
+         register = "R" + str(index + 5)
+
+      return """
+// BEGIN POP of %s %d
+
+// load the value from the stack
+// load the current stack pointer address, decrementing the value by
+// 1, storing the new stack pointer
+@SP
+AM=M-1
+// load the value at the end of the stack into D
+D=M
+// load the destination into A
+@%s
+// store D into the destination address
+M=D
+""" % (segment, index, register)
