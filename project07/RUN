@@ -1,0 +1,6 @@
+#!/bin/sh
+./main.py ./MemoryAccess/BasicTest/BasicTest.vm
+./main.py ./MemoryAccess/StaticTest/StaticTest.vm
+./main.py ./MemoryAccess/PointerTest/PointerTest.vm
+./main.py ./StackArithmetic/SimpleAdd/SimpleAdd.vm
+./main.py ./StackArithmetic/StackTest/StackTest.vm
