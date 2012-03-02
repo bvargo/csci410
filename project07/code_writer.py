@@ -8,6 +8,9 @@ class CodeWriter(object):
    # the jump number, for different jump labels for comparisons
    jump_number = 0
 
+   # the current vm file being parsed
+   vm_filename = None
+
    # constructor
    # saves the output file handle
    def __init__(self, destination_file):
@@ -15,7 +18,9 @@ class CodeWriter(object):
 
    # informs the code writer that the translation of a new VM file has started
    def set_filename(self, filename):
-      pass
+      # store just the basename of the file
+      # any dots in the basename are removed
+      self.vm_filename = ''.join(filename.split("/")[-1].split(".")[:-1])
 
    # writes the assembly code for the translation of an arithmetic command
    def write_arithemtic(self, command):
@@ -38,23 +43,19 @@ class CodeWriter(object):
             self.destination_file.write(self.push_constant(index))
          elif segment in ["argument", "local", "this", "that"]:
             self.destination_file.write(self.push_double_pointer(segment, index))
-         elif segment in ["pointer", "temp"]:
+         elif segment in ["pointer", "temp", "static"]:
             # pointer is RAM[3-4] (this and that), and temp is RAM[5-12]
+            # static is allocated by the assembler
             self.destination_file.write(self.push_stationary(segment, index))
-         elif segment == "static":
-            # static variables
-            raise NotImplementedError("Segment type " + segment + " for push")
          else:
             raise Exception("Invalid segment type " + segment + " for push")
       elif command == "C_POP":
          if segment in ["argument", "local", "this", "that"]:
             self.destination_file.write(self.pop_double_pointer(segment, index))
-         elif segment in ["pointer", "temp"]:
+         elif segment in ["pointer", "temp", "static"]:
             # pointer is RAM[3-4] (this and that), and temp is RAM[5-12]
+            # static is allocated by the assembler
             self.destination_file.write(self.pop_stationary(segment, index))
-         elif segment == "static":
-            # static variables
-            raise NotImplementedError("Segment type " + segment + " for pop")
          else:
             raise Exception("Invalid segment type " + segment + " for pop")
 
@@ -232,16 +233,18 @@ M=M+1
 
 ################################################################################
 
-   # pushes a value onto the stack from a stationary address (pointer or
-   # temp)
+   # pushes a value onto the stack from a stationary address (pointer, temp,
+   # or static)
    def push_stationary(self, segment, index):
-      # the name of the stationary register to use
+      # the name of the stationary memory address to use
       if segment == "pointer" and index == 0:
-         register = "THIS"
+         memory_location = "THIS"
       elif segment == "pointer" and index == 1:
-         register = "THAT"
+         memory_location = "THAT"
       elif segment == "temp":
-         register = "R" + str(index + 5)
+         memory_location = "R" + str(index + 5)
+      else:
+         memory_location = self.vm_filename + "." + str(index)
 
       return """
 //
@@ -259,7 +262,7 @@ M=D
 // store the new stack pointer into SP
 @SP
 M=M+1
-""" % (segment, index, register)
+""" % (segment, index, memory_location)
 
 
 ################################################################################
@@ -288,7 +291,7 @@ D=M
 // add the offset to get segment[index]
 @%d
 D=D+A
-// store the destination location in a temporary register (R13)
+// store the destination location in a temporary memory location (R13)
 @R13
 M=D
 
@@ -308,15 +311,18 @@ M=D
 
 ################################################################################
 
+   # pops a value from the stack into a stationary address (pointer, temp, or
+   # static)
    def pop_stationary(self, segment, index):
-      # the name of the register to use as the base pointer
-      # the name of the stationary register to use
+      # the name of the stationary memory location to use
       if segment == "pointer" and index == 0:
-         register = "THIS"
+         memory_location = "THIS"
       elif segment == "pointer" and index == 1:
-         register = "THAT"
+         memory_location = "THAT"
       elif segment == "temp":
-         register = "R" + str(index + 5)
+         memory_location = "R" + str(index + 5)
+      else:
+         memory_location = self.vm_filename + "." + str(index)
 
       return """
 // BEGIN POP of %s %d
@@ -332,4 +338,4 @@ D=M
 @%s
 // store D into the destination address
 M=D
-""" % (segment, index, register)
+""" % (segment, index, memory_location)
