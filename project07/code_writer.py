@@ -208,17 +208,30 @@ M=M+1
       elif segment == "that":
          segment_reg = "THAT"
 
-      return """
+      # the initial code for this section
+      code = """
 //
 // BEGIN PUSH of %s %d
-//
+//""" % (segment, index)
 
+      # only calculate the offset if the index is not 0
+      if index != 0:
+         code += """
 // load the address of the segment into D
 @%s
 D=M
 // add the offset to get segment[index]
 @%d
-A=D+A
+A=D+A""" % (segment_reg, index)
+      else:
+         # offset is 0 - just load the base pointer
+         code += """
+// load the address of the segment into A
+@%s
+A=M""" % (segment_reg)
+
+      # the rest of the code
+      code += """
 // put the value to push onto the stack from memory into D
 D=M
 // load the current stack pointer address
@@ -229,7 +242,8 @@ M=D
 // store the new stack pointer into SP
 @SP
 M=M+1
-""" % (segment, index, segment_reg, index)
+"""
+      return code
 
 ################################################################################
 
@@ -281,16 +295,24 @@ M=M+1
       elif segment == "that":
          segment_reg = "THAT"
 
-      return """
+      # the initial code for this section
+      code = """
 // BEGIN POP of %s %d
 
 // calculate the destination
 // load the address of segment into D
 @%s
-D=M
+D=M""" % (segment, index, segment_reg)
+
+      # only calculate the offset if the index is not 0
+      if index != 0:
+         code += """
 // add the offset to get segment[index]
 @%d
 D=D+A
+""" % (index)
+      # the rest of the code for this section
+      code += """
 // store the destination location in a temporary memory location (R13)
 @R13
 M=D
@@ -307,7 +329,8 @@ D=M
 A=M
 // store D into the destination address
 M=D
-""" % (segment, index, segment_reg, index)
+"""
+      return code
 
 ################################################################################
 
