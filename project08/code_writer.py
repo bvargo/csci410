@@ -215,6 +215,121 @@ M=D
       # write the code to the file
       self.destination_file.write(''.join(code))
 
+   # writes a return command
+   def write_return(self):
+      # generate the code
+      code = ["""
+//
+// return
+//
+
+"""]
+
+      # frame = LCL
+      # put frame into R13
+      code.append("""
+// frame = LCL
+@LCL
+D=M
+@R13
+M=D
+""")
+
+      # ret = *(frame-5)
+      # put ret into R14
+      code.append("""
+// ret = *(frame-5)
+// D already contains frame
+@5
+A=D-A
+D=M
+@R14
+M=D
+""")
+
+      # reposition the return value for the caller
+      # *ARG = pop()
+      code.append("""
+// *ARG = pop()
+@SP
+AM=A-1
+D=M
+@ARG
+A=M
+M=D
+""")
+
+      # restore SP
+      # SP = ARG+1
+      code.append("""
+// SP = ARG+1
+// A contains the address stored at @ARG
+D=A+1
+@SP
+M=D
+""")
+
+      # restore THAT
+      # THAT = *(FRAME-1)
+      code.append("""
+// THAT = *(FRAME-1)
+// D contains FRAME
+A=D-1
+D=M
+@THAT
+M=D
+""")
+
+      # restore THIS
+      # THIS = *(FRAME-2)
+      code.append("""
+// THIS = *(FRAME-2)
+@R13
+D=M
+@2
+A=D-A
+D=M
+@THIS
+M=D
+""")
+
+      # restore ARG
+      # ARG = *(FRAME-3)
+      code.append("""
+// ARG = *(FRAME-3)
+@R13
+D=M
+@3
+A=D-A
+D=M
+@ARG
+M=D
+""")
+
+      # restore LCL
+      # LCL = *(FRAME-4)
+      code.append("""
+// LCL = *(FRAME-4)
+@R13
+D=M
+@4
+A=D-A
+D=M
+@LCL
+M=D
+""")
+
+      # goto ret
+      code.append("""
+// goto ret
+@R14
+A=M
+0;JMP
+""")
+
+      # write the code to the file
+      self.destination_file.write(''.join(code))
+
    # closes the output file
    def close(self):
       self.destination_file.close()
