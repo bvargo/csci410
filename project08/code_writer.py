@@ -33,6 +33,12 @@ class CodeWriter(object):
       # any dots in the basename are removed
       self.vm_filename = ''.join(filename.split("/")[-1].split(".")[:-1])
 
+      self.destination_file.write("""
+// ---------------------------------------------------------------------------
+// start of file %s
+// ---------------------------------------------------------------------------
+ """ % (self.vm_filename))
+
    # writes bootstrap code
    def write_init(self):
       self.destination_file.write("""
