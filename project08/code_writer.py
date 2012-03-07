@@ -12,15 +12,55 @@ class CodeWriter(object):
    vm_filename = None
 
    # constructor
-   # saves the output file handle
+   # saves the output file handle and writes the initialization code
    def __init__(self, destination_file):
+      # save the file handle
       self.destination_file = destination_file
+
+      # write the initialization code to the file
+      self.write_init()
+
 
    # informs the code writer that the translation of a new VM file has started
    def set_filename(self, filename):
       # store just the basename of the file
       # any dots in the basename are removed
       self.vm_filename = ''.join(filename.split("/")[-1].split(".")[:-1])
+
+   # writes bootstrap code
+   def write_init(self):
+      self.destination_file.write("""
+//
+// bootstrap code
+//
+
+// the stack pointer must be set to 256 upon program start, by convention
+@256
+D=A
+@SP
+M=D
+
+// call Sys.init 0
+// cheat a little bit by not actually storing values, since we will never
+// return to this function; we must still adjust the stack pointer, since the
+// test scripts expect the values to be saved
+
+// set the stack pointer
+@5
+D=A
+@SP
+M=M+D
+
+// set LCL to SP
+@SP
+D=M
+@LCL
+M=D
+
+// run!
+@Sys.init
+0; JMP
+""")
 
    # writes the assembly code for the translation of an arithmetic command
    def write_arithemtic(self, command):
