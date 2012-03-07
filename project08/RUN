@@ -1,0 +1,17 @@
+#!/bin/sh
+# these calls require not having the initialization code
+# since I have implemented the initialization code, these tests no longer work
+
+# produces ProgramFlow/BasicLoop/BasicLoop.asm
+#./main.py ProgramFlow/BasicLoop/BasicLoop.vm
+# produces ProgramFlow/FibonacciSeries/FibonacciSeries.vm
+#./main.py ProgramFlow/FibonacciSeries/FibonacciSeries.vm
+# produces FunctionCalls/SimpleFunction.asm
+#./main.py FunctionCalls/SimpleFunction
+
+# these tests require the initialization code
+# produces FunctionCalls/FibonacciElement.asm
+./main.py FunctionCalls/FibonacciElement
+# produces FunctionCalls/StaticsTest.asm
+./main.py FunctionCalls/StaticsTest
+
