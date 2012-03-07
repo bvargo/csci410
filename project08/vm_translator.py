@@ -79,8 +79,21 @@ class VMTranslator(object):
                code_writer.write_arithemtic(parser.arg1())
             elif command_type in ["C_POP", "C_PUSH"]:
                code_writer.write_push_pop(command_type, parser.arg1(), parser.arg2())
+            elif command_type == "C_LABEL":
+               code_writer.write_label(parser.arg1())
+            elif command_type == "C_GOTO":
+               code_writer.write_goto(parser.arg1())
+            elif command_type == "C_IF":
+               code_writer.write_if(parser.arg1())
+            elif command_type == "C_FUNCTION":
+               code_writer.write_function(parser.arg1(), parser.arg2())
+            elif command_type == "C_RETURN":
+               code_writer.write_return()
+            elif command_type == "C_CALL":
+               code_writer.write_call(parser.arg1(), parser.arg2())
             else:
                raise Exception("Not implemented: command type " + command_type)
+
 
       # close the output file
       code_writer.close()
