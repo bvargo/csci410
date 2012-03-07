@@ -112,6 +112,17 @@ M=D
 (%s)
 """ % (label, self.function_name + "$" + label))
 
+   # writes a goto command
+   def write_goto(self, label):
+      self.destination_file.write("""
+//
+// goto %s
+//
+
+@%s
+0;JMP
+""" % (label, self.function_name + "$" + label))
+
    # closes the output file
    def close(self):
       self.destination_file.close()
