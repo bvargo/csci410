@@ -14,6 +14,9 @@ class CodeWriter(object):
    # the current function name; the default is main
    function_name = "main"
 
+   # a counter for the number of return address labels
+   return_count = 0
+
    # constructor
    # saves the output file handle and writes the initialization code
    def __init__(self, destination_file):
@@ -139,6 +142,78 @@ D=M
 @%s
 D;JNE
 """ % (label, self.function_name + "$" + label))
+
+   # writes a call command
+   def write_call(self, function_name, num_args):
+      # create the return address label
+      self.return_count += 1
+      return_address_label = "RETURN" + str(self.return_count)
+
+      # generate the code
+      code = ["""
+//
+// call %s %s
+//
+
+// push return-address-label (%s)
+""" % (function_name, num_args, return_address_label)]
+
+      # push return-address-label
+      code.append(self.push_constant(return_address_label))
+
+      # push LCL
+      code.append("// push LCL\n")
+      code.append(self.push_stationary("LCL", 0))
+
+      # push ARG
+      code.append("// push ARG\n")
+      code.append(self.push_stationary("ARG", 0))
+
+      # push THIS
+      code.append("// push THIS\n")
+      code.append(self.push_stationary("THIS", 0))
+
+      # push THAT
+      code.append("// push THAT\n")
+      code.append(self.push_stationary("THAT", 0))
+
+      # ARG = SP - n - 5
+      code.append("""
+// ARG = SP - %d - 5
+@SP
+D=M
+@%d
+D=D-A
+@5
+D=D-A
+@ARG
+M=D
+""" % (num_args, num_args))
+
+      # LCL = SP
+      code.append("""
+// LCL = SP
+@SP
+D=M
+@LCL
+M=D
+""")
+
+      # goto function_name
+      code.append("""
+// goto %s
+@%s
+0;JMP
+""" % (function_name, function_name))
+
+      # (return-address-label)
+      code.append("""
+// return-address-label (%s)
+(%s)
+""" % (return_address_label))
+
+      # write the code to the file
+      self.destination_file.write(''.join(code))
 
    # closes the output file
    def close(self):
@@ -338,8 +413,10 @@ M=M+1
          memory_location = "THAT"
       elif segment == "temp":
          memory_location = "R" + str(index + 5)
+      elif segment in ["LCL", "ARG", "THIS", "THAT"]:
+         memory_location = segment
       else:
-         memory_location = self.vm_filename + "." + str(index)
+         memory_location = self.vm_filename + ".static" + str(index)
 
       return """
 //
@@ -426,7 +503,7 @@ M=D
       elif segment == "temp":
          memory_location = "R" + str(index + 5)
       else:
-         memory_location = self.vm_filename + "." + str(index)
+         memory_location = self.vm_filename + ".static" + str(index)
 
       return """
 // BEGIN POP of %s %d
