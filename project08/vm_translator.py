@@ -80,7 +80,7 @@ class VMTranslator(object):
             elif command_type in ["C_POP", "C_PUSH"]:
                code_writer.write_push_pop(command_type, parser.arg1(), parser.arg2())
             else:
-               raise Error("Not implemented: command type " + command_type)
+               raise Exception("Not implemented: command type " + command_type)
 
       # close the output file
       code_writer.close()
