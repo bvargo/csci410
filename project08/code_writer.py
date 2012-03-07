@@ -123,6 +123,23 @@ M=D
 0;JMP
 """ % (label, self.function_name + "$" + label))
 
+   # writes an if-goto command
+   def write_if(self, label):
+      self.destination_file.write("""
+//
+// if-goto %s
+//
+
+// move the stack pointer back by 1
+@SP
+AM=M-1
+// read the last data on the stack
+D=M
+// jump to label if D is not 0
+@%s
+D;JNE
+""" % (label, self.function_name + "$" + label))
+
    # closes the output file
    def close(self):
       self.destination_file.close()
