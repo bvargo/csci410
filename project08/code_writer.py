@@ -210,7 +210,7 @@ M=D
       code.append("""
 // return-address-label (%s)
 (%s)
-""" % (return_address_label))
+""" % (return_address_label, return_address_label))
 
       # write the code to the file
       self.destination_file.write(''.join(code))
@@ -252,7 +252,7 @@ M=D
       code.append("""
 // *ARG = pop()
 @SP
-AM=A-1
+AM=M-1
 D=M
 @ARG
 A=M
@@ -326,6 +326,27 @@ M=D
 A=M
 0;JMP
 """)
+
+      # write the code to the file
+      self.destination_file.write(''.join(code))
+
+   # writes a function command
+   def write_function(self, function_name, num_local_variables):
+      # save the current function name
+      self.function_name = function_name
+
+      # generate the code
+      code = ["""
+//
+// function %s %d
+//
+
+(%s)
+""" % (function_name, num_local_variables, function_name)]
+
+      # push a zero to the stack for each local variable
+      for i in range(0, num_local_variables):
+         code.append(self.push_constant(0))
 
       # write the code to the file
       self.destination_file.write(''.join(code))
@@ -447,11 +468,11 @@ M=-1
    def push_constant(self, index):
       return """
 //
-// BEGIN PUSH of value %d
+// BEGIN PUSH of value %s
 //
 
 // put the value to write into D
-@%d
+@%s
 D=A
 // load the current stack pointer address
 @SP
