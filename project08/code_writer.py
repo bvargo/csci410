@@ -11,6 +11,9 @@ class CodeWriter(object):
    # the current vm file being parsed
    vm_filename = None
 
+   # the current function name; the default is main
+   function_name = "main"
+
    # constructor
    # saves the output file handle and writes the initialization code
    def __init__(self, destination_file):
@@ -98,6 +101,16 @@ M=D
             self.destination_file.write(self.pop_stationary(segment, index))
          else:
             raise Exception("Invalid segment type " + segment + " for pop")
+
+   # writes a label command
+   def write_label(self, label):
+      self.destination_file.write("""
+//
+// label %s
+//
+
+(%s)
+""" % (label, self.function_name + "$" + label))
 
    # closes the output file
    def close(self):
