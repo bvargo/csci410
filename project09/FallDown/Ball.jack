@@ -1,0 +1,109 @@
+// the game's ball
+class Ball {
+   // location of the center of the ball
+   field int x, y;
+
+   // the radius of the ball
+   field int radius;
+
+   // construct a ball at the given location and radius, drawing the ball to
+   // the screen
+   constructor Ball new(int xx, int yy, int rradius) {
+      let x = xx;
+      let y = yy;
+      let radius = rradius;
+
+      do draw(true);
+
+      return this;
+   }
+
+   // desconstruct this object
+   method void dispose() {
+      do Memory.deAlloc(this);
+      return;
+   }
+
+   // draw/undraw the ball to the screen
+   method void draw(boolean draw) {
+      do Screen.setColor(draw);
+      do Screen.drawCircle(x, y, radius);
+      return;
+   }
+
+   // determines if the ball could up by 1 without encountering obstacles
+   // return true if possible, false otherwise
+   method boolean canMoveUp() {
+      if(y - radius > 0) {
+         return true;
+      }
+      else {
+         return false;
+      }
+   }
+
+   // moves the ball up by 1
+   method void moveUp() {
+      let y = y - 1;
+      return;
+   }
+
+   // determines if the ball could down by 1 without encountering obstacles
+   // return true if possible, false otherwise
+   method boolean canMoveDown() {
+      if(y + radius < 255) {
+         // TODO: check for collisions
+         return true;
+      }
+      else {
+         return false;
+      }
+   }
+
+   // moves the ball down by 1
+   method void moveDown() {
+      let y = y + 1;
+      return;
+   }
+
+   // determines if the ball could left by 1 without encountering obstacles
+   // return true if possible, false otherwise
+   method boolean canMoveLeft() {
+      if(x - radius > 0) {
+         // TODO: check for collisions
+         return true;
+      }
+      else {
+         return false;
+      }
+   }
+
+   // moves the ball left by 1
+   method void moveLeft() {
+      let x = x - 1;
+      return;
+   }
+
+   // determines if the ball could right by 1 without encountering obstacles
+   // return true if possible, false otherwise
+   method boolean canMoveRight() {
+      if(x + radius < 511) {
+         // TODO: check for collisions
+         return true;
+      }
+      else {
+         return false;
+      }
+   }
+
+   // moves the ball right by 1
+   method void moveRight() {
+      let x = x + 1;
+      return;
+   }
+
+   // returns the row of the top edge of the balll
+   method int getTopEdge() {
+      return y - radius;
+   }
+}

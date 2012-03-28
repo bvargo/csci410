@@ -1,0 +1,121 @@
+// implementation of the FallDown game
+class FallDownGame {
+   // the player's ball
+   field Ball ball;
+
+   // constructs the game
+   constructor FallDownGame new() {
+      // start the ball in the middle of the screen
+      // radius is 12
+      // (512-12)/2 + 12 = 262
+      // start on row radius+1 because the first action will be to move the
+      // objects on the screen up
+      let ball = Ball.new(262, 13, 12);
+
+      return this;
+   }
+
+   // deconstructs the game
+   method void dispose() {
+      do ball.dispose();
+      do Memory.deAlloc(this);
+      return;
+   }
+
+   // the game's main loop
+   method void run() {
+      // the key that is pressed
+      var char key;
+
+      // the list of obstacles
+      var Obstacles obstacles;
+
+      // variables for tracking movement
+      var boolean movedLeft;
+      var boolean movedRight;
+      var boolean movedDown1;
+      var boolean movedDown2;
+
+      // whether the player has lost; false by default
+      var boolean lost;
+      let lost = false;
+
+      // initialize and create a few obstacles
+      let obstacles = Obstacles.new(null);
+      do obstacles.add(Obstacle.new(0, 60));
+      do obstacles.add(Obstacle.new(250, 400));
+
+      // loop until the player has lost
+      while(~lost) {
+         // gets the current keypress state
+         let key = Keyboard.keyPressed();
+
+         // undraw all of the objects
+         do ball.draw(false);
+         do obstacles.draw(false);
+
+         // move all of the objects up
+         do ball.moveUp();
+         do obstacles.moveUp();
+
+         // process keys, moving the ball's position to the left or right as
+         // possible
+         if(key = 81) {
+            // q for quit
+            let lost = true;
+         }
+         if(key = 130) {
+            // left arrow to move left
+
+            // see if we can move left
+            let movedLeft = ball.canMoveLeft();
+
+            // if we can move, move left 
+            if(movedLeft) {
+               do ball.moveLeft();
+            }
+         }
+         if(key = 132) {
+            // right arrow to move right
+
+            // see if we can move right
+            let movedRight = ball.canMoveRight();
+
+            // if we can move, move right
+            if(movedRight) {
+               do ball.moveRight();
+            }
+         }
+
+         // move the ball's position down if there is nothing below it
+         // ---
+         // try moving down again, to simulate falling, but only if the first
+         // fall succeeded
+         let movedDown1 = ball.canMoveDown();
+         if(movedDown1) {
+            do ball.moveDown();
+
+            let movedDown2 = ball.canMoveDown();
+            if(movedDown2) {
+               do ball.moveDown();
+            }
+         }
+
+         // check for a crash
+         // if the ball has reached the top of the screen or the player quit,
+         // then the game is over
+         if(ball.getTopEdge() < 0) {
+            let lost = true;
+         }
+
+         // draw the objects
+         do ball.draw(true);
+         do obstacles.draw(true);
+
+         // let the duty cycle show the screen before trying to process again
+         do Sys.wait(7);
+      }
+
+      return;
+   }
+}

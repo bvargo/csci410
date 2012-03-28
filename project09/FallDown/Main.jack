@@ -1,11 +1,14 @@
-// Main entry point into the program
-// just a simple "Hello, World" for now
+// main entry point into the program
 class Main
 {
    function void main()
    {
-      do Output.printString("Hello, World!");
-      do Output.println();
+      var FallDownGame game;
+      let game = FallDownGame.new();
+
+      do game.run();
+      do game.dispose();
+
       return;
    }
 }
