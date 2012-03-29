@@ -59,10 +59,10 @@ class FallDownGame {
          // gets the current keypress state
          let key = Keyboard.keyPressed();
 
-         // undraw all of the objects
-         // only use if not using built-in Screen
-         //do ball.draw(false);
-         //do obstacles.draw(false);
+         // undraw the objects
+         do ball.draw(false);
+         // do not undraw the obstacles, as they are updated only when they
+         // move
 
          if(lineCount = 0) {
             // move all of the objects up
@@ -123,13 +123,9 @@ class FallDownGame {
          }
 
          if(~lost) {
-            // clear the screen
-            // only use if using a built-in Screen
-            do Screen.clearScreen();
-
             // draw the objects
             do ball.draw(true);
-            do obstacles.draw(true);
+            // do not draw the obstacles; they are drawn only when they move
 
             // let the duty cycle show the screen before trying to process again
             do Sys.wait(7);
