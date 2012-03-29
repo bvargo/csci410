@@ -51,8 +51,9 @@ class FallDownGame {
          let key = Keyboard.keyPressed();
 
          // undraw all of the objects
-         do ball.draw(false);
-         do obstacles.draw(false);
+         // only use if not using built-in Screen
+         //do ball.draw(false);
+         //do obstacles.draw(false);
 
          // move all of the objects up
          do ball.moveUp();
@@ -108,13 +109,26 @@ class FallDownGame {
             let lost = true;
          }
 
-         // draw the objects
-         do ball.draw(true);
-         do obstacles.draw(true);
+         if(~lost) {
+            // clear the screen
+            // only use if using a built-in Screen
+            do Screen.clearScreen();
 
-         // let the duty cycle show the screen before trying to process again
-         do Sys.wait(7);
+            // draw the objects
+            do ball.draw(true);
+            do obstacles.draw(true);
+
+            // let the duty cycle show the screen before trying to process again
+            do Sys.wait(7);
+         }
       }
+
+      // the player lost
+      // move the ball back down by one and draw, so the player can see how
+      // they lost
+      do ball.moveDown();
+      do ball.draw(true);
+      do Output.printString("You Lose!");
 
       return;
    }
