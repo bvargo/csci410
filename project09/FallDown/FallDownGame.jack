@@ -69,7 +69,7 @@ class FallDownGame {
             // left arrow to move left
 
             // see if we can move left
-            let movedLeft = ball.canMoveLeft();
+            let movedLeft = ball.canMoveLeft(obstacles);
 
             // if we can move, move left 
             if(movedLeft) {
@@ -80,7 +80,7 @@ class FallDownGame {
             // right arrow to move right
 
             // see if we can move right
-            let movedRight = ball.canMoveRight();
+            let movedRight = ball.canMoveRight(obstacles);
 
             // if we can move, move right
             if(movedRight) {
@@ -92,11 +92,11 @@ class FallDownGame {
          // ---
          // try moving down again, to simulate falling, but only if the first
          // fall succeeded
-         let movedDown1 = ball.canMoveDown();
+         let movedDown1 = ball.canMoveDown(obstacles);
          if(movedDown1) {
             do ball.moveDown();
 
-            let movedDown2 = ball.canMoveDown();
+            let movedDown2 = ball.canMoveDown(obstacles);
             if(movedDown2) {
                do ball.moveDown();
             }

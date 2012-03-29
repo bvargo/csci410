@@ -69,7 +69,22 @@ class Obstacle {
       return;
    }
 
-   // returns y
+   // returns the left X coordinate
+   method int getX1() {
+      return x1;
+   }
+
+   // retursn the right X coordinate
+   method int getX2() {
+      return x2;
+   }
+
+   // returns the upper Y coordinate
+   method int getY1() {
+      return y;
+   }
+
+   // returns the lower Y coordinate
    method int getY2() {
       return y + 10;
    }

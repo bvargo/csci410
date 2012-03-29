@@ -114,4 +114,9 @@ class Obstacles {
 
       return;
    }
+
+   // get the first obstacle
+   method Obstacle getHead() {
+      return head;
+   }
 }
