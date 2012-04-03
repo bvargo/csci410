@@ -4,8 +4,10 @@ class Main
    function void main()
    {
       var FallDownGame game;
-      let game = FallDownGame.new();
 
+      do Random.setSeed(1337);
+
+      let game = FallDownGame.new();
       do game.run();
       do game.dispose();
 

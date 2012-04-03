@@ -36,6 +36,11 @@ class FallDownGame {
       var boolean movedDown1;
       var boolean movedDown2;
 
+      // loop variables + random number
+      var int i;
+      var int j;
+      var int rand;
+
       // counter of lines, used for initializing new lines and moving
       // items at different speeds
       var int lineCount;
@@ -127,8 +132,9 @@ class FallDownGame {
             do ball.draw(true);
             // do not draw the obstacles; they are drawn only when they move
 
-            // let the duty cycle show the screen before trying to process again
-            do Sys.wait(7);
+            // let the duty cycle show the screen before trying to process
+            // again
+            do Sys.wait(4);
          }
 
          // lines move up every 2 iterations
@@ -141,9 +147,30 @@ class FallDownGame {
 
          // new squares appear every so often
          if(lineCount2 = 150) {
+            // produce random lines
+            let i = 0;
+
+            while(i < 512) {
+               // choose a length for the next block
+               let rand = Random.randInt(30, 100);
+               let j = i + rand;
+
+               // limit the length so it fits on screen
+               if(j > 511) {
+                  let j = 511;
+               }
+
+               // add the obstacle and increase i, but only randomly
+               // there have to be some holes, most of the time
+               if(Random.randInt(0, 10000) > 5000) {
+                  do obstacles.add(Obstacle.new(i, j));
+               }
+               // do not use j, since i has to go over 511
+               let i = i + rand;
+            }
+
+            // reset the second line counter
             let lineCount2 = 0;
-            do obstacles.add(Obstacle.new(0, 60));
-            do obstacles.add(Obstacle.new(250, 400));
          }
          else {
             let lineCount2 = lineCount2 + 1;
