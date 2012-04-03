@@ -63,9 +63,9 @@ class Obstacle {
       return;
    }
 
-   // moves the obstacle up by 1
+   // moves the obstacle up by 5
    method void moveUp() {
-      let y = y - 1;
+      let y = y - 5;
       return;
    }
 

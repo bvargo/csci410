@@ -31,10 +31,11 @@ class Ball {
       return;
    }
 
-   // determines if the ball could up by 1 without encountering obstacles
+   // determines if the ball could up by 5 without encountering obstacles
    // return true if possible, false otherwise
    method boolean canMoveUp(Obstacles obstacles) {
-      if(y - radius > 0) {
+      // 5 - 0 - 1
+      if(y - radius > 4) {
          return true;
       }
       else {
@@ -42,22 +43,23 @@ class Ball {
       }
    }
 
-   // moves the ball up by 1
+   // moves the ball up by 5
    method void moveUp() {
-      let y = y - 1;
+      let y = y - 5;
       return;
    }
 
-   // determines if the ball could down by 1 without encountering obstacles
+   // determines if the ball could down by 3 without encountering obstacles
    // return true if possible, false otherwise
    method boolean canMoveDown(Obstacles obstacles) {
       var Obstacle pointer;
 
       // the new lower bound after moving
       var int bottom_new;
-      let bottom_new = y + radius + 1;
+      let bottom_new = y + radius + 5;
 
-      if(y + radius < 255) {
+      // 255 - 5 + 1 = 251
+      if(y + radius < 251) {
          // check for collisions
          let pointer = obstacles.getHead();
          while(~(pointer = null)) {
@@ -79,24 +81,28 @@ class Ball {
       }
    }
 
-   // moves the ball down by 1
+   // moves the ball down by 5
    method void moveDown() {
-      let y = y + 1;
+      let y = y + 5;
       return;
    }
 
-   // determines if the ball could left by 1 without encountering obstacles
+   // determines if the ball could left by 3 without encountering obstacles
    // return true if possible, false otherwise
    method boolean canMoveLeft(Obstacles obstacles) {
       var Obstacle pointer;
+      var int withinBounds;
 
-      if(x - radius > 0) {
+      // 4 = 0 (left of screen) + 5 (length of movement) - 1 (because of >)
+      if(x - radius > 4) {
          // check for collisions
          // can only collide with the left side of the ball and the right side
          // of the platform
          let pointer = obstacles.getHead();
          while(~(pointer = null)) {
-            if(   ((x - radius - 1) = pointer.getX2()) &
+            let withinBounds = (x - radius) - pointer.getX2();
+            if(   (withinBounds < 5) &
+                  (withinBounds > 0) &
                   (y + radius > pointer.getY1()) &
                   (y - radius < pointer.getY2())) {
                // collision
@@ -113,24 +119,28 @@ class Ball {
       }
    }
 
-   // moves the ball left by 1
+   // moves the ball left by 5
    method void moveLeft() {
-      let x = x - 1;
+      let x = x - 5;
       return;
    }
 
-   // determines if the ball could right by 1 without encountering obstacles
+   // determines if the ball could right by 5 without encountering obstacles
    // return true if possible, false otherwise
    method boolean canMoveRight(Obstacles obstacles) {
       var Obstacle pointer;
+      var int withinBounds;
 
-      if(x + radius < 511) {
+      // 507 = 512 - 5
+      if(x + radius < 507) {
          // check for collisions
          // can only collide with the right side of the ball and the left side
          // of the platform
          let pointer = obstacles.getHead();
          while(~(pointer = null)) {
-            if(   ((x + radius + 1) = pointer.getX1()) &
+            let withinBounds = pointer.getX1() - (x + radius);
+            if(   (withinBounds < 5) &
+                  (withinBounds > 0) &
                   (y + radius > pointer.getY1()) &
                   (y - radius < pointer.getY2())) {
                // collision
@@ -147,9 +157,9 @@ class Ball {
       }
    }
 
-   // moves the ball right by 1
+   // moves the ball right by 5
    method void moveRight() {
-      let x = x + 1;
+      let x = x + 5;
       return;
    }
 

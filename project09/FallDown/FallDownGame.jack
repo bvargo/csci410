@@ -33,8 +33,7 @@ class FallDownGame {
       // variables for tracking movement
       var boolean movedLeft;
       var boolean movedRight;
-      var boolean movedDown1;
-      var boolean movedDown2;
+      var boolean movedDown;
 
       // loop variables + random number
       var int i;
@@ -106,15 +105,14 @@ class FallDownGame {
 
          // move the ball's position down if there is nothing below it
          // ---
-         // try moving down again, to simulate falling, but only if the first
-         // fall succeeded and this is a frame in which the obstacles moved up
-         let movedDown1 = ball.canMoveDown(obstacles);
-         if(movedDown1) {
+         // do this multiple times, to speed the game
+         let movedDown = ball.canMoveDown(obstacles);
+         if(movedDown) {
             do ball.moveDown();
 
             if(lineCount = 0) {
-               let movedDown2 = ball.canMoveDown(obstacles);
-               if(movedDown2) {
+               let movedDown = ball.canMoveDown(obstacles);
+               if(movedDown) {
                   do ball.moveDown();
                }
             }
@@ -134,7 +132,7 @@ class FallDownGame {
 
             // let the duty cycle show the screen before trying to process
             // again
-            do Sys.wait(4);
+            do Sys.wait(15);
          }
 
          // lines move up every 2 iterations
@@ -146,7 +144,7 @@ class FallDownGame {
          }
 
          // new squares appear every so often
-         if(lineCount2 = 150) {
+         if(lineCount2 = 50) {
             // produce random lines
             let i = 0;
 
@@ -162,7 +160,7 @@ class FallDownGame {
 
                // add the obstacle and increase i, but only randomly
                // there have to be some holes, most of the time
-               if(Random.randInt(0, 10000) > 5000) {
+               if(Random.randInt(0, 10000) > 3000) {
                   do obstacles.add(Obstacle.new(i, j));
                }
                // do not use j, since i has to go over 511
