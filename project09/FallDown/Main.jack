@@ -3,13 +3,25 @@ class Main
 {
    function void main()
    {
+      var FallDownIntro intro;
       var FallDownGame game;
+      var int seed;
 
-      do Random.setSeed(1337);
+      while(true) {
+         do Screen.clearScreen();
+         do Output.moveCursor(0, 0);
+         let intro = FallDownIntro.new();
+         let seed = intro.run();
+         do intro.dispose();
 
-      let game = FallDownGame.new();
-      do game.run();
-      do game.dispose();
+         do Random.setSeed(seed);
+
+         do Screen.clearScreen();
+         do Output.moveCursor(0, 0);
+         let game = FallDownGame.new();
+         do game.run();
+         do game.dispose();
+      }
 
       return;
    }

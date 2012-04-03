@@ -182,6 +182,8 @@ class FallDownGame {
       do ball.draw(true);
       do Output.printString("You Lose!");
 
+      do Sys.wait(3000);
+
       return;
    }
 }
