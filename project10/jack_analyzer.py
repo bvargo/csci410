@@ -4,7 +4,7 @@
 import os
 import os.path
 
-from jack_tokenizer import JackTokenizer
+from compilation_engine import CompilationEngine
 
 class JackAnalyzer(object):
    # source filenames
@@ -20,7 +20,7 @@ class JackAnalyzer(object):
 
       # remove a trailing / or \, if present
       if source_filename[-1] in ["/", "\\"]:
-         source_filename = source_filename[:-1] 
+         source_filename = source_filename[:-1]
 
       if os.path.isdir(source_filename):
          # find all the .jack files in the given directory
@@ -44,49 +44,7 @@ class JackAnalyzer(object):
 
    # analyze the source
    def analyze(self):
-      # for each source filename
+      # for each source filename, compile the class
       for source_filename in self.source_filenames:
-         # destination filename
-         # if the original extension was .jack, then make the extension T.xml
-         # if the original extension was not .jack, then append T.xml
-         if source_filename.lower().endswith(".jack"):
-            destination_filename = source_filename[:-5] + "T.xml"
-         else:
-            destination_filename = source_filename + "T.xml"
-
-         # open the destination filename for writing
-         destination_file = open(destination_filename, 'w')
-
-         tokenizer = JackTokenizer(source_filename)
-
-         # start <tokens>
-         destination_file.write("<tokens>\n")
-
-         # parse each token
-         while tokenizer.has_more_tokens():
-            # advance to the next token
-            tokenizer.advance()
-
-            # get the token type and the token itself
-            token_type = tokenizer.token_type().lower()
-            token = str(getattr(tokenizer, token_type.lower())())
-
-            # special types
-            token_type = token_type.replace("int_const", "integerConstant")
-            token_type = token_type.replace("string_const", "stringConstant")
-
-            # special values
-            s = {"<": "&lt;", ">": "&gt;", '"': "&quot;", "&": "&amp;"}
-            for s, r in s.iteritems():
-               token = token.replace(s, r)
-
-            # print the token type and token to the file
-            output = ['<', token_type, '>', ' ', token, ' ', '</', token_type,
-                  '>', '\n']
-            destination_file.write("".join(output))
-
-         # end <tokens>
-         destination_file.write("</tokens>\n")
-
-         # close the output file
-         destination_file.close()
+         compiler = CompilationEngine(source_filename)
+         compiler.compile_class()

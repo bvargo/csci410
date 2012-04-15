@@ -7,6 +7,12 @@ class JackTokenizer(object):
    # the source input
    source = []
 
+   # the inputs of source that have already been processed
+   # the most recently processed input is at the end of the list
+   # this way, the entire source input can be represented as
+   # done + current_token + source
+   done = []
+
    # the current token as a string
    current_token = ""
 
@@ -100,7 +106,21 @@ class JackTokenizer(object):
    # it should be called only if has_more_commands is true
    def advance(self):
       if self.has_more_tokens():
+         # save the last token processed
+         self.done.append(self.current_token)
+
+         # move to the next token
          self.current_token = self.source.pop(0)
+
+   # moves the tokenizer backwards again, if possible
+   # this is the opposite of advance
+   def retreat(self):
+      if len(self.done) != 0:
+         # add the current token back into the list of tokens not yet processed
+         self.source.insert(0, self.current_token)
+
+         # adjust the current token to the last token in done
+         self.current_token = self.source.pop()
 
    # returns the type of the current token
    # - KEYWORD
