@@ -15,6 +15,9 @@ class CompilationEngine(object):
    # the tokenizer for the input file
    tokenizer = None
 
+   # current indentation level
+   indent = 0
+
    # the constructor for compiling a single class
    # the next method to be called after construction must be compile_class
    # source_filename must be a single file, not a directory
@@ -36,7 +39,7 @@ class CompilationEngine(object):
    # compiles a complete class and closes the output file
    def compile_class(self):
       # start the class
-      self.destination_file.write("<class>\n")
+      self._start_block("class")
 
       # class
       tt, t = self._token_next(True, "KEYWORD", "class")
@@ -75,7 +78,7 @@ class CompilationEngine(object):
       self._write(tt, t)
 
       # end the class
-      self.destination_file.write("</class>\n")
+      self._end_block("class")
 
       # close the output file
       self.destination_file.close()
@@ -83,19 +86,19 @@ class CompilationEngine(object):
    # compiles a static declaration or field declaration
    def compile_class_var_dec(self):
       # start variable declaration
-      self.destination_file.write("<classVarDec>\n")
+      self._start_block("classVarDec")
 
       # compile the variable declaration
       # False means don't print the tags
       self.compile_var_dec(False)
 
       # end variable declaration
-      self.destination_file.write("</classVarDec>\n")
+      self._end_block("classVarDec")
 
    # compiles a complete method, function, or constructor
    def compile_subroutine(self):
       # start subroutine declaration
-      self.destination_file.write("<subroutineDec>\n")
+      self._start_block("subroutineDec")
 
       # constructor, function, or name keyword
       tt, t = self._token_next(False, "KEYWORD")
@@ -123,7 +126,7 @@ class CompilationEngine(object):
       self._write(tt, t)
 
       # start body of subroutine
-      self.destination_file.write("<subroutineBody>\n")
+      self._start_block("subroutineBody")
 
       # opening brace
       tt, t = self._token_next(True, "SYMBOL", "{")
@@ -147,17 +150,17 @@ class CompilationEngine(object):
       self._write(tt, t)
 
       # end body of subroutine
-      self.destination_file.write("</subroutineBody>\n")
+      self._end_block("subroutineBody")
 
       # finish subroutine declaration
-      self.destination_file.write("</subroutineDec>\n")
+      self._end_block("subroutineDec")
 
       self.tokenizer.advance()
 
    # compiles a (possibly empty) parameter list, not including the enclosing
    # parentheses
    def compile_parameter_list(self):
-      self.destination_file.write("<parameterList>\n")
+      self._start_block("parameterList")
 
       # check for empty list
       tt, t = self._token_next(False)
@@ -185,12 +188,12 @@ class CompilationEngine(object):
 
             self.tokenizer.advance()
 
-      self.destination_file.write("</parameterList>\n")
+      self._end_block("parameterList")
 
    # compiles a var declaration
    def compile_var_dec(self, print_tags=True):
       if print_tags:
-         self.destination_file.write("<varDec>\n")
+         self._start_block("varDec")
 
       # the keyword to start the declaration
       tt, t = self._token_next(False, "KEYWORD")
@@ -230,11 +233,11 @@ class CompilationEngine(object):
       self.tokenizer.advance()
 
       if print_tags:
-         self.destination_file.write("</varDec>\n")
+         self._end_block("varDec")
 
    # compiles a sequence of statements, not including the enclosing {}
    def compile_statements(self):
-      self.destination_file.write("<statements>\n")
+      self._start_block("statements")
 
       while True:
          tt, t = self._token_next(False)
@@ -245,11 +248,11 @@ class CompilationEngine(object):
             # not a statement; stop processing statements
             break
 
-      self.destination_file.write("</statements>\n")
+      self._end_block("statements")
 
    # compiles a do statement
    def compile_do(self):
-      self.destination_file.write("<doStatement>\n")
+      self._start_block("doStatement")
 
       # do keyword
       tt, t = self._token_next(False, "KEYWORD", "do")
@@ -263,12 +266,12 @@ class CompilationEngine(object):
       tt, t = self._token_next(False, "SYMBOL", ";")
       self._write(tt, t)
 
-      self.destination_file.write("</doStatement>\n")
+      self._end_block("doStatement")
       self.tokenizer.advance()
 
    # compiles a let statement
    def compile_let(self):
-      self.destination_file.write("<letStatement>\n")
+      self._start_block("letStatement")
 
       # let keyword
       tt, t = self._token_next(False, "KEYWORD", "let")
@@ -308,12 +311,12 @@ class CompilationEngine(object):
       tt, t = self._token_next(False, "SYMBOL", ";")
       self._write(tt, t)
 
-      self.destination_file.write("</letStatement>\n")
+      self._end_block("letStatement")
       self.tokenizer.advance()
 
    # compiles a while statement
    def compile_while(self):
-      self.destination_file.write("<whileStatement>\n")
+      self._start_block("whileStatement")
 
       # while keyword
       tt, t = self._token_next(False, "KEYWORD", "while")
@@ -343,12 +346,12 @@ class CompilationEngine(object):
       tt, t = self._token_next(False, "SYMBOL", "}")
       self._write(tt, t)
 
-      self.destination_file.write("</whileStatement>\n")
+      self._end_block("whileStatement")
       self.tokenizer.advance()
 
    # compiles a return statement
    def compile_return(self):
-      self.destination_file.write("<returnStatement>\n")
+      self._start_block("returnStatement")
 
       # return keyword
       tt, t = self._token_next(False, "KEYWORD", "return")
@@ -363,12 +366,12 @@ class CompilationEngine(object):
       tt, t = self._token_next(False, "SYMBOL", ";")
       self._write(tt, t)
 
-      self.destination_file.write("</returnStatement>\n")
+      self._end_block("returnStatement")
       self.tokenizer.advance()
 
    # compiles a if statement, including a possible trailing else clause
    def compile_if(self):
-      self.destination_file.write("<ifStatement>\n")
+      self._start_block("ifStatement")
 
       # if keyword
       tt, t = self._token_next(False, "KEYWORD", "if")
@@ -419,11 +422,11 @@ class CompilationEngine(object):
          # token was advanced by the else check
          self.tokenizer.advance()
 
-      self.destination_file.write("</ifStatement>\n")
+      self._end_block("ifStatement")
 
    # compiles an expression (one or more terms connected by operators)
    def compile_expression(self):
-      self.destination_file.write("<expression>\n")
+      self._start_block("expression")
 
       # the first term
       self.compile_term()
@@ -442,7 +445,7 @@ class CompilationEngine(object):
             # no term found; done parsing the expression
             break
 
-      self.destination_file.write("</expression>\n")
+      self._end_block("expression")
 
    # compiles a term
    # this routine is faced with a slight difficulty when trying to decide
@@ -453,7 +456,7 @@ class CompilationEngine(object):
    # possibilities. any other token is not part of this term and should not
    # be advanced over.
    def compile_term(self):
-      self.destination_file.write("<term>\n")
+      self._start_block("term")
 
       # a term: integer_constant | string_constant | keyword_constant |
       # varname | varname[expression] | subroutine_call | (expression) |
@@ -533,11 +536,11 @@ class CompilationEngine(object):
          # unknown
          print "WARNING: Unknown term expression object:", tt, t
 
-      self.destination_file.write("</term>\n")
+      self._end_block("term")
 
    # compiles a (possible empty) comma-separated list of expressions
    def compile_expression_list(self):
-      self.destination_file.write("<expressionList>\n")
+      self._start_block("expressionList")
 
       # check for empty list
       tt, t = self._token_next(False)
@@ -559,7 +562,7 @@ class CompilationEngine(object):
                # not a comma; stop processing parameters
                break
 
-      self.destination_file.write("</expressionList>\n")
+      self._end_block("expressionList")
 
    # compiles a subroutine call
    # two cases:
@@ -637,4 +640,18 @@ class CompilationEngine(object):
       # print the token type and token to the file
       output = ['<', token_type, '>', ' ', token, ' ', '</', token_type,
             '>', '\n']
-      self.destination_file.write("".join(output))
+      self.destination_file.write(self._indent("".join(output)))
+
+   # starts an XML block
+   def _start_block(self, block_name):
+      self.destination_file.write(self._indent("<" + block_name + ">\n"))
+      self.indent += 2
+
+   # ends an XML block
+   def _end_block(self, block_name):
+      self.indent -= 2
+      self.destination_file.write(self._indent("</" + block_name + ">\n"))
+
+   # indents a single line of text at the current indentation level
+   def _indent(self, text):
+      return " " * self.indent + text
