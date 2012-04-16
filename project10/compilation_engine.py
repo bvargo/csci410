@@ -290,6 +290,7 @@ class CompilationEngine(object):
 
          # closing bracket
          tt, t = self._token_next(False, "SYMBOL", "]")
+         self._write(tt, t)
 
          # advance to the next token, since we are expected to be on the = for
          # the next line
@@ -452,16 +453,87 @@ class CompilationEngine(object):
    # possibilities. any other token is not part of this term and should not
    # be advanced over.
    def compile_term(self):
-      # TODO - right now, this only prints what it gets
-
       self.destination_file.write("<term>\n")
 
-      # print whatever is in the term (should be an identifier for now)
-      tt, t = self._token_next(False, "IDENTIFIER")
-      self._write(tt, t)
+      # a term: integer_constant | string_constant | keyword_constant |
+      # varname | varname[expression] | subroutine_call | (expression) |
+      # unary_op term
+      tt, t = self._token_next(False)
+      if tt in ["INT_CONST", "STRING_CONST", "KEYWORD"]:
+         self._write(tt, t)
+
+         # advance for the next statement
+         self.tokenizer.advance()
+      elif tt == "SYMBOL" and t == "(":
+         # ( expression )
+
+         # write the opening parenthesis
+         self._write(tt, t)
+
+         # parse the expression
+         self.tokenizer.advance()
+         self.compile_expression()
+
+         # closing parenthesis
+         tt, t = self._token_next(False, "SYMBOL", ")")
+         self._write(tt, t)
+
+         # advance for the next statement
+         self.tokenizer.advance()
+
+      elif tt == "SYMBOL" and t in "-~":
+         # unary_op term
+
+         # write the unary operation
+         self._write(tt, t)
+
+         # parse the rest of the term
+         self.tokenizer.advance()
+         self.compile_term()
+
+      elif tt == "IDENTIFIER":
+         # varname, varname[expression], subroutine_call
+
+         # do not write the identiifer yet
+
+         # get the next bit of the expression
+         # if it is a [, then array; if it is a ( or ., then subroutine call
+         # if none of above, then pass over
+         tt2, t2 = self._token_next(True)
+
+         if tt2 == "SYMBOL" and t2 in "(.":
+            # subroutine call
+            # back up and then compile the subroutine call
+            self.tokenizer.retreat()
+
+            self.compile_subroutine_call()
+         elif tt2 == "SYMBOL" and t2 == "[":
+            # array
+            # write identifier
+            self._write(tt, t)
+
+            # write bracket
+            self._write(tt2, t2)
+
+            # compile the expression
+            self.tokenizer.advance()
+            self.compile_expression()
+
+            # closing bracket
+            tt, t = self._token_next(False, "SYMBOL", "]")
+            self._write(tt, t)
+
+            # advance for the next statement
+            self.tokenizer.advance()
+         else:
+            # none of above - just a single identifier
+            self._write(tt, t)
+
+      else:
+         # unknown
+         print "WARNING: Unknown term expression object:", tt, t
 
       self.destination_file.write("</term>\n")
-      self.tokenizer.advance()
 
    # compiles a (possible empty) comma-separated list of expressions
    def compile_expression_list(self):
