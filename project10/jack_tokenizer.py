@@ -120,7 +120,7 @@ class JackTokenizer(object):
          self.source.insert(0, self.current_token)
 
          # adjust the current token to the last token in done
-         self.current_token = self.source.pop()
+         self.current_token = self.done.pop()
 
    # returns the type of the current token
    # - KEYWORD
