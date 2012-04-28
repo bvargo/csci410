@@ -1,12 +1,10 @@
 main.py is the driver program. It is invoked as follows:
 ./main.py source
 
-Given the above invocation, the .jack files in source will be tokenized into
-xml files. Eventually, the .jack files will also be parsed. Tokenizing outputs
-MainT.xml, while parsing outputs Main.xml (for a Main.jack input).
+Given the above invocation, the .jack files in source will be compiled into .vm
+vm files. If a directory is passed, then all .jack files in the directory
+will be converted.
 
-If a directory is passed, then all .jack files in the directory will be
-converted.
-
-The original XML files, for comparison purposes, are located in the original_xml
-directory under each program directory.
+Please note that I have decided to skip the intermediate symbol table XML
+support and instead proceed with simple testing. Thus, my project 10 directory
+does not contain the symbol table code.
