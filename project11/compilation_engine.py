@@ -129,16 +129,16 @@ class CompilationEngine(object):
 
       # variable declarations
       self.tokenizer.advance()
-      num_locals = 0
       while True:
          tt, t = self._token_next(False)
          if tt == "KEYWORD" and t == "var":
-            num_locals += self.compile_var_dec()
+            self.compile_var_dec()
          else:
             # stop trying to process variable declarations
             break
 
       # write the function
+      num_locals = self.symbol_table.var_count(self.symbol_table.VAR)
       self.vm_writer.write_function(name, num_locals)
 
       # write any special code at the top of the function
@@ -211,9 +211,6 @@ class CompilationEngine(object):
       # the keyword to start the declaration
       tt, kind = self._token_next(False, "KEYWORD")
 
-      # the number of variables compiled
-      num_vars = 0
-
       # check for required types
       if subroutine:
          if kind == "var":
@@ -237,7 +234,6 @@ class CompilationEngine(object):
 
       # define the variable in the symbol table
       self.symbol_table.define(name, type, kind)
-      num_vars += 1
 
       # can support more than one identifier name, to declare more than one
       # variable, separated by commas; process the 2nd-infinite variables
@@ -250,7 +246,6 @@ class CompilationEngine(object):
 
             # define the variable in the symbol table
             self.symbol_table.define(name, type, kind)
-            num_vars += 1
 
             self.tokenizer.advance()
          else:
@@ -261,8 +256,6 @@ class CompilationEngine(object):
       tt, t = self._token_next(False, "SYMBOL", ";")
 
       self.tokenizer.advance()
-
-      return num_vars
 
    # compiles a sequence of statements, not including the enclosing {}
    def compile_statements(self):
