@@ -297,21 +297,33 @@ class CompilationEngine(object):
       # possible brackets for array
       tt, t = self._token_next(True)
       if tt == "SYMBOL" and t == "[":
-         # TODO
-         # write bracket
-         self._write(tt, t)
+         # array - write operation
+         array = True
 
-         # compile the expression
+         # write the base address onto the stack
+         segment, index = self._resolve_symbol(name)
+         self.vm_writer.write_push(segment, index)
+
+         # compile the offset expression
          self.tokenizer.advance()
          self.compile_expression()
 
+         # add base and offset
+         self.vm_writer.write_arithmetic("add")
+
+         # put the resulting address into pointer 1 (that)
+         self.vm_writer.write_pop(self.vm_writer.POINTER, 1)
+
+         # that 0 is now the destination location
+
          # closing bracket
          tt, t = self._token_next(False, "SYMBOL", "]")
-         self._write(tt, t)
 
          # advance to the next token, since we are expected to be on the = for
          # the next line
          self.tokenizer.advance()
+      else:
+         array = False
 
       # equals sign
       tt, t = self._token_next(False, "SYMBOL", "=")
@@ -320,9 +332,14 @@ class CompilationEngine(object):
       self.tokenizer.advance()
       self.compile_expression()
 
-      # pop to the variable name
-      segment, index = self._resolve_symbol(name)
-      self.vm_writer.write_pop(segment, index)
+      # pop to the variable name or the array reference
+      if array:
+         # pop to array destination in that 0
+         self.vm_writer.write_pop(self.vm_writer.THAT, 0)
+      else:
+         # pop to variable name
+         segment, index = self._resolve_symbol(name)
+         self.vm_writer.write_pop(segment, index)
 
       # semicolon
       tt, t = self._token_next(False, "SYMBOL", ";")
@@ -528,7 +545,22 @@ class CompilationEngine(object):
          # advance for the next statement
          self.tokenizer.advance()
       elif tt == "STRING_CONST":
-         # TODO
+         # after this portion is run, a pointer to a string should be on the
+         # stack
+         # we create a new string of a certain size and then append characters
+         # one by one; each append operation returns the pointer to the same
+         # string
+
+         # create the string
+         # string is a len, data tuple; not null-terminated
+         size = len(t)
+         self.vm_writer.write_push(self.vm_writer.CONST, size)
+         self.vm_writer.write_call("String.new", 1)
+
+         # append each character
+         for char in t:
+            self.vm_writer.write_push(self.vm_writer.CONST, ord(char))
+            self.vm_writer.write_call("String.appendChar", 2)
 
          # advance for the next statement
          self.tokenizer.advance()
@@ -588,21 +620,27 @@ class CompilationEngine(object):
 
             self.compile_subroutine_call()
          elif tt2 == "SYMBOL" and t2 == "[":
-            # TODO - handle arrays
-            # array
-            # write identifier
-            self._write(tt, t)
+            # array - read operation
 
-            # write bracket
-            self._write(tt2, t2)
+            # write the base address onto the stack
+            segment, index = self._resolve_symbol(t)
+            self.vm_writer.write_push(segment, index)
 
-            # compile the expression
+            # compile the offset expression
             self.tokenizer.advance()
             self.compile_expression()
 
+            # add base and offset
+            self.vm_writer.write_arithmetic("add")
+
+            # put the resulting address into pointer 1 (that)
+            self.vm_writer.write_pop(self.vm_writer.POINTER, 1)
+
+            # read from that 0 onto the stack
+            self.vm_writer.write_push(self.vm_writer.THAT, 0)
+
             # closing bracket
             tt, t = self._token_next(False, "SYMBOL", "]")
-            self._write(tt, t)
 
             # advance for the next statement
             self.tokenizer.advance()
