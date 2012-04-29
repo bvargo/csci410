@@ -21,7 +21,7 @@ class CompilationEngine(object):
    indent = 0
 
    # symbol table
-   symbol_table = SymbolTable()
+   symbol_table = None
 
    # vm writer
    vm_writer = None
@@ -30,8 +30,9 @@ class CompilationEngine(object):
    class_name = ""
 
    # indicies for if and while loops
-   while_index = 0
-   if_index = 0
+   # start at -1 because we increment before use
+   while_index = -1
+   if_index = -1
 
    # the constructor for compiling a single class
    # the next method to be called after construction must be compile_class
@@ -50,6 +51,9 @@ class CompilationEngine(object):
 
       # create a tokenizer for the input file
       self.tokenizer = JackTokenizer(source_filename)
+
+      # create the symbol table
+      self.symbol_table = SymbolTable()
 
       # create the vm writer
       self.vm_writer = VMWriter(self.destination_file)
@@ -114,6 +118,11 @@ class CompilationEngine(object):
       tt, name = self._token_next(True)
       name = self.class_name + "." + name
 
+      # if the type is a method, "define" this as an argument, so the other
+      # argument indexes work correctly
+      if type == "method":
+         self.symbol_table.define("this", self.class_name, SymbolTable.ARG)
+
       # opening parenthesis
       tt, t = self._token_next(True, "SYMBOL", "(")
 
@@ -144,8 +153,7 @@ class CompilationEngine(object):
       # write any special code at the top of the function
       if type == "constructor":
          # code to allocate memory and set "this"
-         size = self.symbol_table.var_count(self.symbol_table.STATIC)
-         size += self.symbol_table.var_count(self.symbol_table.FIELD)
+         size = self.symbol_table.var_count(self.symbol_table.FIELD)
          self.vm_writer.write_push(self.vm_writer.CONST, size)
          self.vm_writer.write_call("Memory.alloc", 1)
          self.vm_writer.write_pop(self.vm_writer.POINTER, 0)
@@ -170,8 +178,6 @@ class CompilationEngine(object):
    # compiles a (possibly empty) parameter list, not including the enclosing
    # parentheses
    def compile_parameter_list(self):
-      num_args = 0
-
       # check for empty list
       tt, t = self._token_next(False)
       if tt == "SYMBOL" and t == ")":
@@ -192,7 +198,6 @@ class CompilationEngine(object):
 
             # define the variable in the symbol table
             self.symbol_table.define(name, type, kind)
-            num_args += 1
 
             # possible comma
             tt, t = self._token_next(True)
@@ -201,8 +206,6 @@ class CompilationEngine(object):
                break
 
             self.tokenizer.advance()
-
-      return num_args
 
    # compiles a var declaration
    # if subroutine is true, only the var keyword can be used
@@ -219,7 +222,7 @@ class CompilationEngine(object):
             print "WARNING: expecting var, but received %s" % (str(kind))
       else:
          if kind == "static":
-            kind = SymbolTable.VAR
+            kind = SymbolTable.STATIC
          elif kind == "field":
             kind = SymbolTable.FIELD
          else:
