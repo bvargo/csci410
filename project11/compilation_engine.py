@@ -29,6 +29,10 @@ class CompilationEngine(object):
    # the class name
    class_name = ""
 
+   # indicies for if and while loops
+   while_index = 0
+   if_index = 0
+
    # the constructor for compiling a single class
    # the next method to be called after construction must be compile_class
    # source_filename must be a single file, not a directory
@@ -103,14 +107,13 @@ class CompilationEngine(object):
       tt, type = self._token_next(False, "KEYWORD")
       if type == "constructor":
          # TODO
-         num_args = 0
+         pass
       elif type == "function":
          # TODO
-         num_args = 0
+         pass
       elif type == "method":
          # TODO
-         # implicit argument of the object
-         num_args = 1
+         pass
       else:
          print "WARNING: Expected constructor, function, or name; got", type
 
@@ -127,10 +130,7 @@ class CompilationEngine(object):
 
       # arguments
       self.tokenizer.advance()
-      num_args += self.compile_parameter_list()
-
-      # write the function
-      self.vm_writer.write_function(name, num_args)
+      self.compile_parameter_list()
 
       # closing parenthesis
       tt, t = self._token_next(False, "SYMBOL", ")")
@@ -140,13 +140,17 @@ class CompilationEngine(object):
 
       # variable declarations
       self.tokenizer.advance()
+      num_locals = 0
       while True:
          tt, t = self._token_next(False)
          if tt == "KEYWORD" and t == "var":
-            self.compile_var_dec()
+            num_locals += self.compile_var_dec()
          else:
             # stop trying to process variable declarations
             break
+
+      # write the function
+      self.vm_writer.write_function(name, num_locals)
 
       # statements
       self.compile_statements()
@@ -200,6 +204,9 @@ class CompilationEngine(object):
       # the keyword to start the declaration
       tt, kind = self._token_next(False, "KEYWORD")
 
+      # the number of variables compiled
+      num_vars = 0
+
       # check for required types
       if subroutine:
          if kind == "var":
@@ -223,6 +230,7 @@ class CompilationEngine(object):
 
       # define the variable in the symbol table
       self.symbol_table.define(name, type, kind)
+      num_vars += 1
 
       # can support more than one identifier name, to declare more than one
       # variable, separated by commas; process the 2nd-infinite variables
@@ -235,6 +243,7 @@ class CompilationEngine(object):
 
             # define the variable in the symbol table
             self.symbol_table.define(name, type, kind)
+            num_vars += 1
 
             self.tokenizer.advance()
          else:
@@ -245,6 +254,8 @@ class CompilationEngine(object):
       tt, t = self._token_next(False, "SYMBOL", ";")
 
       self.tokenizer.advance()
+
+      return num_vars
 
    # compiles a sequence of statements, not including the enclosing {}
    def compile_statements(self):
@@ -277,19 +288,16 @@ class CompilationEngine(object):
 
    # compiles a let statement
    def compile_let(self):
-      self._start_block("letStatement")
-
       # let keyword
       tt, t = self._token_next(False, "KEYWORD", "let")
-      self._write(tt, t)
 
       # variable name
-      tt, t = self._token_next(True, "IDENTIFIER")
-      self._write(tt, t)
+      tt, name = self._token_next(True, "IDENTIFIER")
 
       # possible brackets for array
       tt, t = self._token_next(True)
       if tt == "SYMBOL" and t == "[":
+         # TODO
          # write bracket
          self._write(tt, t)
 
@@ -307,30 +315,35 @@ class CompilationEngine(object):
 
       # equals sign
       tt, t = self._token_next(False, "SYMBOL", "=")
-      self._write(tt, t)
 
       # expression
       self.tokenizer.advance()
       self.compile_expression()
 
+      # pop to the variable name
+      segment, index = self._resolve_symbol(name)
+      self.vm_writer.write_pop(segment, index)
+
       # semicolon
       tt, t = self._token_next(False, "SYMBOL", ";")
-      self._write(tt, t)
 
-      self._end_block("letStatement")
       self.tokenizer.advance()
 
    # compiles a while statement
    def compile_while(self):
-      self._start_block("whileStatement")
+      # labels for this while loop
+      self.while_index += 1
+      while_start = "WHILE_START_%d" % (self.while_index)
+      while_end = "WHILE_END_%d" % (self.while_index)
 
       # while keyword
       tt, t = self._token_next(False, "KEYWORD", "while")
-      self._write(tt, t)
 
       # opening parenthesis
       tt, t = self._token_next(True, "SYMBOL", "(")
-      self._write(tt, t)
+
+      # label for the start of the while statement
+      self.vm_writer.write_label(while_start)
 
       # the expression that is the condition of the while statement
       self.tokenizer.advance()
@@ -338,11 +351,15 @@ class CompilationEngine(object):
 
       # the closing parenthesis
       tt, t = self._token_next(False, "SYMBOL", ")")
-      self._write(tt, t)
+
+      # the result of the evaluation is now on the stack
+      # if false, then goto to the end of the loop
+      # to do this, negate and then call if-goto
+      self.vm_writer.write_arithmetic("not")
+      self.vm_writer.write_if(while_end)
 
       # the opening brace
       tt, t = self._token_next(True, "SYMBOL", "{")
-      self._write(tt, t)
 
       # the statments that is the body of the while loop
       self.tokenizer.advance()
@@ -350,9 +367,14 @@ class CompilationEngine(object):
 
       # the closing brace
       tt, t = self._token_next(False, "SYMBOL", "}")
-      self._write(tt, t)
 
-      self._end_block("whileStatement")
+      # after the last statement of the while loop
+      # need to jump back up to the top of the loop to evaluate again
+      self.vm_writer.write_goto(while_start)
+
+      # label at the end of the loop
+      self.vm_writer.write_label(while_end)
+
       self.tokenizer.advance()
 
    # compiles a return statement
@@ -371,19 +393,26 @@ class CompilationEngine(object):
       # ending semicolon
       tt, t = self._token_next(False, "SYMBOL", ";")
 
+      self.vm_writer.write_return()
+
       self.tokenizer.advance()
 
    # compiles a if statement, including a possible trailing else clause
    def compile_if(self):
-      self._start_block("ifStatement")
+      # it is more efficient in an if-else case to have the else portion first
+      # in the code when testing, but we use the less-efficient but
+      # easier-to-write true-false pattern here
+
+      # labels for this if statement
+      self.if_index += 1
+      if_false = "IF_FALSE_%d" % (self.if_index)
+      if_end = "IF_END_%d" % (self.if_index)
 
       # if keyword
       tt, t = self._token_next(False, "KEYWORD", "if")
-      self._write(tt, t)
 
       # opening parenthesis
       tt, t = self._token_next(True, "SYMBOL", "(")
-      self._write(tt, t)
 
       # expression of if statement
       self.tokenizer.advance()
@@ -391,42 +420,55 @@ class CompilationEngine(object):
 
       # closing parenthesis
       tt, t = self._token_next(False, "SYMBOL", ")")
-      self._write(tt, t)
+
+      # the result of the evaluation is now on the stack
+      # if false, then goto the false label
+      # if true, fall through to executing code
+      # if there is no else, then false and end are the same, but having two
+      # labels does not increase code size
+      self.vm_writer.write_arithmetic("not")
+      self.vm_writer.write_if(if_false)
 
       # opening brace
       tt, t = self._token_next(True, "SYMBOL", "{")
-      self._write(tt, t)
 
-      # statements
+      # statements for true portion
       self.tokenizer.advance()
       self.compile_statements()
 
       # closing brace
       tt, t = self._token_next(False, "SYMBOL", "}")
-      self._write(tt, t)
 
       tt, t = self._token_next(True)
       if tt == "KEYWORD" and t == "else":
          # else statement exists
-         # write else
-         seld._write(tt, t)
+
+         # goto the end of the if statement at the end of the true portion
+         self.vm_writer.write_goto(if_end)
+
+         # label for the start of the false portion
+         self.vm_writer.write_label(if_false)
 
          # opening brace
-         tt, t = self._token_next(False, "SYMBOL", "{")
-         self._write(tt, t)
+         tt, t = self._token_next(True, "SYMBOL", "{")
 
          # statements
+         self.tokenizer.advance()
          self.compile_statements()
 
          # closing brace
          tt, t = self._token_next(False, "SYMBOL", "}")
-         self._write(tt, t)
+
+         # end label
+         self.vm_writer.write_label(if_end)
 
          # advance tokenizer only if we are in the else, since otherwise the
          # token was advanced by the else check
          self.tokenizer.advance()
-
-      self._end_block("ifStatement")
+      else:
+         # no else portion; only put in a label for false, since end is not
+         # used
+         self.vm_writer.write_label(if_false)
 
    # compiles an expression (one or more terms connected by operators)
    def compile_expression(self):
@@ -494,7 +536,7 @@ class CompilationEngine(object):
          if t == "true":
             # true is -1, which is 0 negated
             self.vm_writer.write_push(self.vm_writer.CONST, 0)
-            self.vm_writer.write_arithmetic("neg")
+            self.vm_writer.write_arithmetic("not")
          elif t == "false" or t == "null":
             self.vm_writer.write_push(self.vm_writer.CONST, 0)
          elif t == "this":
