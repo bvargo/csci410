@@ -17,9 +17,6 @@ class CompilationEngine(object):
    # the tokenizer for the input file
    tokenizer = None
 
-   # current indentation level
-   indent = 0
-
    # symbol table
    symbol_table = None
 
@@ -806,39 +803,6 @@ class CompilationEngine(object):
          sys.exit(1)
 
       return token_type, token
-
-   # writes the given token to the output file
-   def _write(self, token_type, token):
-      # lowercase for tag name
-      token_type = token_type.lower()
-
-      # special types
-      token_type = token_type.replace("int_const", "integerConstant")
-      token_type = token_type.replace("string_const", "stringConstant")
-
-      # special values to replace for output
-      s = {"<": "&lt;", ">": "&gt;", '"': "&quot;", "&": "&amp;"}
-      for s, r in s.iteritems():
-         token = token.replace(s, r)
-
-      # print the token type and token to the file
-      output = ['<', token_type, '>', ' ', token, ' ', '</', token_type,
-            '>', '\n']
-      self.destination_file.write(self._indent("".join(output)))
-
-   # starts an XML block
-   def _start_block(self, block_name):
-      self.destination_file.write(self._indent("<" + block_name + ">\n"))
-      self.indent += 2
-
-   # ends an XML block
-   def _end_block(self, block_name):
-      self.indent -= 2
-      self.destination_file.write(self._indent("</" + block_name + ">\n"))
-
-   # indents a single line of text at the current indentation level
-   def _indent(self, text):
-      return " " * self.indent + text
 
    # convets a symbol table type into a segment type
    def _type_to_segment(self, type):
