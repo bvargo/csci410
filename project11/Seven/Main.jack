@@ -10,8 +10,8 @@
 class Main {
 
    function void main() {
-       do Output.printInt(1 + (2 * 3));
-       return;
+      do Output.printInt(1 + (2 * 3));
+      return;
    }
 
 }
