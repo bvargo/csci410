@@ -105,17 +105,6 @@ class CompilationEngine(object):
 
       # constructor, function, or method keyword
       tt, type = self._token_next(False, "KEYWORD")
-      if type == "constructor":
-         # TODO
-         pass
-      elif type == "function":
-         # TODO
-         pass
-      elif type == "method":
-         # TODO
-         pass
-      else:
-         print "WARNING: Expected constructor, function, or name; got", type
 
       # type of the return value
       # can be either keyword (void) or an identifier (any type)
@@ -151,6 +140,24 @@ class CompilationEngine(object):
 
       # write the function
       self.vm_writer.write_function(name, num_locals)
+
+      # write any special code at the top of the function
+      if type == "constructor":
+         # code to allocate memory and set "this"
+         size = self.symbol_table.var_count(self.symbol_table.STATIC)
+         size += self.symbol_table.var_count(self.symbol_table.FIELD)
+         self.vm_writer.write_push(self.vm_writer.CONST, size)
+         self.vm_writer.write_call("Memory.alloc", 1)
+         self.vm_writer.write_pop(self.vm_writer.POINTER, 0)
+      elif type == "function":
+         # nothing special
+         pass
+      elif type == "method":
+         # put argument 0 into pointer 0 (this)
+         self.vm_writer.write_push(self.vm_writer.ARG, 0)
+         self.vm_writer.write_pop(self.vm_writer.POINTER, 0)
+      else:
+         print "WARNING: Expected constructor, function, or name; got", type
 
       # statements
       self.compile_statements()
@@ -540,10 +547,7 @@ class CompilationEngine(object):
          elif t == "false" or t == "null":
             self.vm_writer.write_push(self.vm_writer.CONST, 0)
          elif t == "this":
-            # since we must be within a method to use this, argument 0
-            # must be the current object
-            # FIXME - possible other ways to reference
-            self.vm_writer.write_push(self.vm_writer.ARG, 0)
+            self.vm_writer.write_push(self.vm_writer.POINTER, 0)
 
          # advance for the next statement
          self.tokenizer.advance()
@@ -681,10 +685,7 @@ class CompilationEngine(object):
       # OR name1 is a method in the current object
       if method_call and local_call:
          # push the current object onto the stack as a hidden argument
-         # since we must be within a method to make a local call, argument 0
-         # must be the current object
-         # FIXME - possible other ways to reference
-         self.vm_writer.write_push(self.vm_writer.ARG, 0)
+         self.vm_writer.write_push(self.vm_writer.POINTER, 0)
       elif method_call and not local_call:
          # push the variable onto the stack as a hidden argument
          segment, index = self._resolve_symbol(name1)
