@@ -303,21 +303,20 @@ class CompilationEngine(object):
          # array - write operation
          array = True
 
-         # write the base address onto the stack
-         segment, index = self._resolve_symbol(name)
-         self.vm_writer.write_push(segment, index)
-
          # compile the offset expression
          self.tokenizer.advance()
          self.compile_expression()
 
+         # write the base address onto the stack
+         segment, index = self._resolve_symbol(name)
+         self.vm_writer.write_push(segment, index)
+
          # add base and offset
          self.vm_writer.write_arithmetic("add")
 
-         # put the resulting address into pointer 1 (that)
-         self.vm_writer.write_pop(self.vm_writer.POINTER, 1)
-
-         # that 0 is now the destination location
+         # we cannot yet put the result into pointer 1, since the read
+         # operation (which hasn't been parsed/computed yet) may use pointer 1
+         # to read from an arrya value
 
          # closing bracket
          tt, t = self._token_next(False, "SYMBOL", "]")
@@ -335,12 +334,26 @@ class CompilationEngine(object):
       self.tokenizer.advance()
       self.compile_expression()
 
-      # pop to the variable name or the array reference
       if array:
-         # pop to array destination in that 0
+         # our stack now looks like this:
+         #    TOP OF STACK
+         #    computed result to store
+         #    address in which value should be stored
+         #    ... previous stuff ...
+
+         # pop the computed value to temp 0
+         self.vm_writer.write_pop(self.vm_writer.TEMP, 0)
+
+         # pop the array address to pointer 1 (that)
+         self.vm_writer.write_pop(self.vm_writer.POINTER, 1)
+
+         # put the computed value back onto the stack
+         self.vm_writer.write_push(self.vm_writer.TEMP, 0)
+
+         # pop to the variable name or the array reference
          self.vm_writer.write_pop(self.vm_writer.THAT, 0)
       else:
-         # pop to variable name
+         # not an array - pop the expression to the variable
          segment, index = self._resolve_symbol(name)
          self.vm_writer.write_pop(segment, index)
 
