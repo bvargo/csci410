@@ -7,12 +7,20 @@
  * A general array - can be used to hold any type of object.
  */
 class Array {
-
    /** Constructs a new Array of the given size. */
    function Array new(int size) {
+      // casting int (the return type) to Array
+      return Memory.alloc(size);
    }
 
    /** De-allocates the array and frees its space. */
    method void dispose() {
+      // "this" is a pointer to the start of data, from above, due to
+      // cleverness, since this really isn't an object
+
+      // free the array data
+      do Memory.deAlloc(this);
+
+      return;
    }
 }
