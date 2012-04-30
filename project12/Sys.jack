@@ -10,18 +10,55 @@ class Sys {
 
    /** Makes all required initializations. */
    function void init() {
+      // initialize each module
+      // String and Array do not have init methods
+      do Keyboard.init();
+      do Math.init();
+      do Memory.init();
+      do Output.init();
+      do Screen.init();
+
+      // call main
+      do Main.main();
+
+      // halt the CPU
+      do Sys.halt();
+
+      // never reached
+      return;
    }
 
    /** Halts the execution. */
    function void halt() {
+      while(true) {
+         // nothing here
+      }
+
+      // code never reached
+      return;
    }
 
    /** Waits approximately duration milliseconds before it returns. */
    function void wait(int duration) {
+      var int counter;
+      while(duration > 0) {
+         let duration = duration - 1;
+         let counter = 270;
+         while(counter > 0) {
+            let counter = counter - 1;
+         }
+      }
+      return;
    }
 
    /** prints the given error code in the form "ERR<errorCode>",
     *  and halts. */
    function void error(int errorCode) {
+      // this function cannot be called more than once, so the following is
+      // not a memory leak
+      do Output.printString("ERR");
+      do Output.printInt(errorCode);
+
+      return;
    }
 }
